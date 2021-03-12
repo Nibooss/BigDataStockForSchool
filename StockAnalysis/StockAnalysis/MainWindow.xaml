@@ -4,9 +4,33 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StockAnalysis"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        mc:Ignorable="d" ResizeMode="CanResize"
+        Title="RG Stock Analysis" Height="450" Width="800">
+    <WindowChrome.WindowChrome>
+        <WindowChrome/>
+    </WindowChrome.WindowChrome>
+    <Window.Template>
+        <ControlTemplate TargetType="{x:Type Window}">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="{Binding Path=Top, Source={x:Static SystemParameters.WindowNonClientFrameThickness}}"/>
+                    <RowDefinition Height="1*"/>
+                </Grid.RowDefinitions>
+                <ContentControl Grid.Row="1" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" Margin="{x:Static SystemParameters.WindowResizeBorderThickness}"/>
+            </Grid>
+        </ControlTemplate>
+    </Window.Template>
 
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="9*"/>
+        </Grid.ColumnDefinitions>
+
+        <Rectangle Grid.Column="0" Fill="Gray"/>
+        <GridSplitter Grid.Column="0" Width="3"/>
+        <Rectangle Grid.Column="1" Fill="SlateGray"/>
     </Grid>
+    
 </Window>
