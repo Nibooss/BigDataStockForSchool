@@ -102,7 +102,7 @@ namespace StockAnalysis.Model
                     try
                     {
                         Moments[dayCounter] = new StockMoment() {
-                            Time     = new DateTime(QuickDT[0], QuickDT[1], QuickDT[2], QuickDT[3], QuickDT[4], QuickDT[5]),
+                            Time     = ((DateTimeOffset)new DateTime(QuickDT[0], QuickDT[1], QuickDT[2], QuickDT[3], QuickDT[4], QuickDT[5])).ToUnixTimeSeconds(),
                             Open    = values[1, 0] + values[1, 1] / 10,
                             High    = values[2, 0] + values[2, 1] / 10,
                             Low     = values[3, 0] + values[3, 1] / 10,

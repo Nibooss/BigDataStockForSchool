@@ -6,7 +6,7 @@ namespace StockAnalysis.Model
     public class StockMoment
     {
         // Info AboutStock
-        public DateTime Time { get; set; } 
+        public long Time { get; set; } 
 
         public double Open { get; set; }
         public double High { get; set; }

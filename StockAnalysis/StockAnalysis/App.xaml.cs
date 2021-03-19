@@ -20,18 +20,12 @@ namespace StockAnalysis
         public App()
         {
             InitializeComponent();
-            // sd.DownlaodToArray(symbol: "IBM");
-            sql.InitializeDatabase(symbol: "IBM");
-            sql.InitializeDatabase(symbol: "AAPL");
-            sql.AddData(symbol:"IBM", inputText:"HelloWorld");
-            sql.AddData(symbol:"IBM", inputText:"I am cereal Hello");
-            sql.AddData(symbol:"IBM", inputText:"hello again");
-            sql.AddData(symbol:"AAPL", inputText:"HelloWorld");
-            sql.AddData(symbol:"AAPL", inputText:"HelloWorld");
-            var x = sql.ReadFromDB(symbol: "IBM");
-            var y = sql.ReadFromDB(symbol: "AAPL");
+            var sma = sd.DownlaodToArray("IBM");
+            sql.InitializeDatabase("IBM");
+            sql.AddData("IBM", sma);
+            var x = sql.ReadFromDB("IBM");
         }
 
-        public string APIKEY { get; set; }
+        public string APIKEY { get; set; } = "WEWF8LKFM1UXNU6X";
     }
 }
