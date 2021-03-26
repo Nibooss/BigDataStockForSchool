@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -8,8 +9,6 @@ namespace StockAnalysis.Model
     public class StockDownloader
     {
         private HttpClient Client = new HttpClient();
-        private StockMoment[] lastDownloaded;
-        private HttpResponseMessage lastResponse;
 
         public static string[] Slices => new string[]
         {
@@ -53,15 +52,13 @@ namespace StockAnalysis.Model
             ApiCommand.Append($"&adjusted=false");                          // not adjusted
             ApiCommand.Append($"&apikey={App.APIKEY}");                     // API Key
 
-            lastResponse = Client.GetAsync(ApiCommand.ToString()).Result;
-            var s = lastResponse?.Content.ReadAsStreamAsync().Result;
+            var x = Client.GetAsync(ApiCommand.ToString()).Result;
+            var s = x.Content.ReadAsStreamAsync().Result;
 
-            return lastDownloaded = CSVDecoder(s);
+            return CSVDecoder(s);
         }
 
-        public StockMoment[] GetLastDownloaded() => lastDownloaded;
-
-        public static StockMoment[] CSVDecoder(Stream s)
+        public StockMoment[] CSVDecoder(Stream s)
         {
             // Initialize Some Variables
             int commaCount = 0;
