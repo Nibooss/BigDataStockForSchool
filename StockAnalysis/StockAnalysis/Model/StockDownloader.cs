@@ -44,13 +44,13 @@ namespace StockAnalysis.Model
         public StockMoment[] DownlaodToArray(string symbol, int slice = 0)
         {
             StringBuilder ApiCommand = new StringBuilder();
-            ApiCommand.Append($"https://www.alphavantage.co/query?");        // Adress start of query
-            ApiCommand.Append($"function=TIME_SERIES_INTRADAY_EXTENDED");    // Function
-            ApiCommand.Append($"&symbol={symbol}");                          // Symbol
-            ApiCommand.Append($"&interval=1min");                            // interval
-            ApiCommand.Append($"&slice={Slices[slice]}");                    // slice
-            ApiCommand.Append($"&adjusted=false");                           // not adjusted
-            ApiCommand.Append($"&apikey={App.app.APIKEY}");                  // API Key
+            ApiCommand.Append($"https://www.alphavantage.co/query?");       // Adress start of query
+            ApiCommand.Append($"function=TIME_SERIES_INTRADAY_EXTENDED");   // Function
+            ApiCommand.Append($"&symbol={symbol}");                         // Symbol
+            ApiCommand.Append($"&interval=1min");                           // interval
+            ApiCommand.Append($"&slice={Slices[slice]}");                   // slice
+            ApiCommand.Append($"&adjusted=false");                          // not adjusted
+            ApiCommand.Append($"&apikey={App.APIKEY}");                     // API Key
 
             var x = Client.GetAsync(ApiCommand.ToString()).Result;
             var s = x.Content.ReadAsStreamAsync().Result;

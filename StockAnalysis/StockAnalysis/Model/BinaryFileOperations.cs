@@ -1,25 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 
 namespace StockAnalysis.Model
 {
-    public class ToBinaryFile
+    public class BinaryFileOperations
     {
+        public static void SaveToBinaryFile(IEnumerable<StockMoment> Input, string Symbol)
+        {
+            SaveToBinaryFile(Input, enshureFileExists(Symbol));
+        }
+
         public static void SaveToBinaryFile(IEnumerable<StockMoment> Input, FileInfo fi)
         {
             var fs = fi.OpenWrite();
             fs.Position = fs.Length;
             foreach (var mom in Input)
             {
+                if(mom == null)
+                {
+                    continue;
+                }
+                if(mom.Time == 0)
+                {
+                    continue;
+                }
                 fs.Write(BitConverter.GetBytes(mom.Time));
                 fs.Write(BitConverter.GetBytes(mom.High));
                 fs.Write(BitConverter.GetBytes(mom.Low));
                 fs.Write(BitConverter.GetBytes(mom.Open));
                 fs.Write(BitConverter.GetBytes(mom.Close));
+                fs.Write(BitConverter.GetBytes(mom.Volume));
             }
             fs.Close();
+        }
+
+        public static StockMoment[] FromFile(string Symbol)
+        {
+            return FromFile(enshureFileExists(Symbol));
         }
 
         public static StockMoment[] FromFile(FileInfo fi)
@@ -46,7 +64,7 @@ namespace StockAnalysis.Model
                 // - Save the current  object in array
                 // - Override temp buffer with new object
                 // - Reset counters
-                if(SMParamsCounter >= 5)
+                if(SMParamsCounter >= 6)
                 {
                     SMParamsCounter = 0;
                     ReturnMe[SMCounter++] = CurrentSM;
@@ -65,6 +83,20 @@ namespace StockAnalysis.Model
             (i, d) => { i.Low = BitConverter.ToDouble(d); },
             (i, d) => { i.Open = BitConverter.ToDouble(d); },
             (i, d) => { i.Close = BitConverter.ToDouble(d); },
+            (i, d) => { i.Volume = BitConverter.ToDouble(d); },
         };
+
+        private static FileInfo enshureFileExists(string symbol)
+        {
+            var file = new FileInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + $"\\StockAnalysis\\{symbol}_StockData.sa");
+            if (false == file.Exists)
+            {
+                var di = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+                di.CreateSubdirectory("StockAnalysis");
+                var OpenFilestream = file.Create();
+                OpenFilestream.Close();
+            }
+            return file;
+        }
     }
 }
