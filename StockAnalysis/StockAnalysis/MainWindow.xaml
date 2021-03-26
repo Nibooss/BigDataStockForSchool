@@ -17,6 +17,7 @@
                     <RowDefinition Height="1*"/>
                 </Grid.RowDefinitions>
                 <ContentControl Grid.Row="1" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" Margin="{x:Static SystemParameters.WindowResizeBorderThickness}"/>
+          
             </Grid>
         </ControlTemplate>
     </Window.Template>
@@ -27,6 +28,19 @@
             <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="9*"/>
         </Grid.ColumnDefinitions>
+
+        <TabControl Grid.Column="0">
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Main"/>
+                </TabItem.Header>
+            </TabItem>
+            <TabItem>
+                <TabItem.Header>
+                    <TextBlock Text="Options"/>
+                </TabItem.Header>
+            </TabItem>
+        </TabControl>
 
         <Rectangle Grid.Column="0" Fill="Gray"/>
         <GridSplitter Grid.Column="0" Width="3"/>
