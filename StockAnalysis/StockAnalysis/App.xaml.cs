@@ -16,7 +16,6 @@ namespace StockAnalysis
     {
         public static App app => App.Current as App;
         StockDownloader sd = new StockDownloader();
-        ToSQLite sql = new ToSQLite();
         public App()
         {
             InitializeComponent();

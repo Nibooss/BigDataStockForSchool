@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace StockAnalysis.Model
 {
@@ -41,7 +42,99 @@ namespace StockAnalysis.Model
             "year2month12",
         };
 
-        public StockMoment[] DownlaodToArray(string symbol, int slice = 0)
+        public async Task DownloadTwoYears(string symbol)
+        {
+            /*
+            // Step 0 | Download First
+            var Stream_00 = DownlaodToArray(symbol, 0).Result;
+
+            // Step 1 | Download Second Convert First
+            var Stream_01 = DownlaodToArray(symbol, 1).Result;
+            var Array_00 = CSVDecoder(Stream_00);
+
+            // Step 2 | Download Third, Convert Second, Save Third
+            BinaryFileOperations.SaveToBinaryFile(Array_00, symbol);
+            var Stream_02 = DownlaodToArray(symbol, 2);
+            var Array_01 = CSVDecoder(Stream_01);
+            */
+
+            // Local Variables
+            Stream ConvertNext = null;
+            StockMoment[] SaveNext = null;
+            
+            // Actual Function
+            for (int i = 0; i < Slices.Length; i++)
+            {
+                var T = new Task<object>[3];
+
+                // Download
+                T[0] = Task.Run(() => 
+                {
+                    if (symbol == null)
+                    {
+                        return null;
+                    }
+                    return (object)DownlaodToArray(symbol, i).Result; ;
+                });
+
+                // CSV Decode
+                T[1] = Task<object>.Run(() => 
+                {
+                    lock (ConvertNext) 
+                    {
+                        if (ConvertNext == null)
+                        {
+                            return null;
+                        }
+                        // Return SaveNextArray
+                        return (object)CSVDecoder(ConvertNext); 
+                    }
+                });
+
+                // Save To Binary
+                T[2] = Task<object>.Run(() => 
+                { 
+                    lock (SaveNext)
+                    {
+                        if(SaveNext == null)
+                        {
+                            return null;
+                        }
+                        BinaryFileOperations.SaveToBinaryFile(SaveNext, symbol);
+                        
+                        // Does not return anything. Create new "object" so we dont return null;
+                        return new object(); 
+                    }
+                });
+
+                // Wait until all Tasks are done.
+                await Task.WhenAll(T);
+
+                // Reasign Variables for next loop
+                var NoNull = false; // Stays false if all are null
+                if (T[0].Result != null)
+                {
+                    ConvertNext = (Stream)T[0].Result;
+                    NoNull = true;
+                }
+                if (T[1].Result != null)
+                {
+                    SaveNext = (StockMoment[])T[1].Result;
+                    NoNull = true;
+                }
+                if(T[2].Result != null)
+                {
+                    NoNull = true;
+                }
+                if(NoNull == false)
+                {
+                    break;
+                }
+            }
+            // 3
+        }
+
+        public async Task<Stream> DownlaodToArray(string symbol, int slice = 0)
         {
             StringBuilder ApiCommand = new StringBuilder();
             ApiCommand.Append($"https://www.alphavantage.co/query?");       // Adress start of query
@@ -52,10 +145,10 @@ namespace StockAnalysis.Model
             ApiCommand.Append($"&adjusted=false");                          // not adjusted
             ApiCommand.Append($"&apikey={App.APIKEY}");                     // API Key
 
-            var x = Client.GetAsync(ApiCommand.ToString()).Result;
-            var s = x.Content.ReadAsStreamAsync().Result;
+            var x = await Client.GetAsync(ApiCommand.ToString());
+            var s = await x.Content.ReadAsStreamAsync();
 
-            return CSVDecoder(s);
+            return s;
         }
 
         public StockMoment[] CSVDecoder(Stream s)
