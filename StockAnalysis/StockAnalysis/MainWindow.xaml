@@ -25,12 +25,31 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
-            <ColumnDefinition Width="9*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="7*"/>
         </Grid.ColumnDefinitions>
 
         <Rectangle Grid.Column="0" Fill="Gray"/>
         <GridSplitter Grid.Column="0" Width="3"/>
         <Rectangle Grid.Column="1" Fill="SlateGray"/>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="1*"/>
+            </Grid.RowDefinitions>
+            <StackPanel Margin="5" Grid.Row="0">
+                <TextBlock Text="Stock Analysis"/>
+                <TextBox Text="{Binding Path=., Source={x:Static local:App.APIKEY}}"/>
+            </StackPanel>
+            <ListView Grid.Row="1" ItemsSource="{Binding DownloadedFiles}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Name}"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+        </Grid>
     </Grid>
     
 </Window>

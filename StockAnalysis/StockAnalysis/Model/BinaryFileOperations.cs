@@ -6,6 +6,22 @@ namespace StockAnalysis.Model
 {
     public class BinaryFileOperations
     {
+        private static string folderPath => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + $"\\StockAnalysis";
+
+        private static HashSet<FileInfo> InternalFileInfoHashSet = new HashSet<FileInfo>();
+
+        public static IEnumerable<FileInfo> AllBinaryFiles()
+        {
+            foreach (var fi in new DirectoryInfo(folderPath).EnumerateFiles("*.sa", new EnumerationOptions() { IgnoreInaccessible = true } ))
+            {
+                if(false == InternalFileInfoHashSet.Contains(fi))
+                {
+                    InternalFileInfoHashSet.Add(fi);
+                }
+            }
+            return InternalFileInfoHashSet;
+        }
+
         public static void SaveToBinaryFile(IEnumerable<StockMoment> Input, string Symbol)
         {
             SaveToBinaryFile(Input, enshureFileExists(Symbol));
@@ -86,17 +102,20 @@ namespace StockAnalysis.Model
             (i, d) => { i.Volume = BitConverter.ToDouble(d); },
         };
 
-        private static FileInfo enshureFileExists(string symbol)
+        private static FileInfo enshureFileExists(string Symbol)
         {
-            var file = new FileInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + $"\\StockAnalysis\\{symbol}_StockData.sa");
+            var file = new FileInfo(folderPath + $"\\{Symbol}_StockData.sa");
             if (false == file.Exists)
             {
-                var di = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+                var di              = new DirectoryInfo(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
                 di.CreateSubdirectory("StockAnalysis");
-                var OpenFilestream = file.Create();
+                var OpenFilestream  = file.Create();
+                OnNewFileCreated?.Invoke(null, file);
                 OpenFilestream.Close();
             }
             return file;
         }
+
+        public static event EventHandler<FileInfo> OnNewFileCreated;
     }
 }

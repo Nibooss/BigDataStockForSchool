@@ -1,4 +1,5 @@
 ﻿using StockAnalysis.Model;
+using StockAnalysis.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -15,11 +16,11 @@ namespace StockAnalysis
     public partial class App : Application
     {
         public static App app => App.Current as App;
-        StockDownloader sd = new StockDownloader();
         public App()
         {
-            InitializeComponent();
+            //InitializeComponent(); // Stupid WPF bug. Not calling this function makes the xaml file pointles :/
             app.MainWindow = new MainWindow();
+            app.MainWindow.DataContext = new MainWindowContext();
             app.MainWindow.Show();
         }
 
