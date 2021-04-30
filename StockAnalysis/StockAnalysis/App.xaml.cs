@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -23,6 +24,16 @@ namespace StockAnalysis
             app.MainWindow.DataContext = new MainWindowContext();
             app.MainWindow.Show();
         }
+
+        public static SynchronizationContext DispatcherSyncroContext => dispatcherSyncroContext ??= initDispatcherSyncroContext();
+        public static SynchronizationContext dispatcherSyncroContext;
+        public static SynchronizationContext initDispatcherSyncroContext()
+        {
+            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            return SynchronizationContext.Current;
+        }
+        public static TaskScheduler DispatcherScheduler => dispatcherScheduler ??= TaskScheduler.FromCurrentSynchronizationContext();
+        public static TaskScheduler dispatcherScheduler;
 
         public static string APIKEY { get; set; } = "WEWF8LKFM1UXNU6X";
     }

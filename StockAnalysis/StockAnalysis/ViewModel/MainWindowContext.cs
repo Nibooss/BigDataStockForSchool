@@ -1,27 +1,58 @@
 ﻿using StockAnalysis.Model;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows.Input;
 
 namespace StockAnalysis.ViewModel
 {
     class MainWindowContext
     {
-        public ObservableCollection<FileInfo> DownloadedFiles => downloadedFiles ??= initDownlaodedFiles();
-        private ObservableCollection<FileInfo> downloadedFiles;
-        private ObservableCollection<FileInfo> initDownlaodedFiles()
+        public ObservableCollection<Symbol> DownloadedFiles => downloadedFiles ??= initDownlaodedFiles();
+        private ObservableCollection<Symbol> downloadedFiles;
+        private ObservableCollection<Symbol> initDownlaodedFiles()
         {
-            var oc = new ObservableCollection<FileInfo>();
-            foreach(var fi in BinaryFileOperations.AllBinaryFiles())
-            {
-                oc.Add(fi);
-            }
-            BinaryFileOperations.OnNewFileCreated += (s, e) => oc.Add(e);
+            var oc = new ObservableCollection<Symbol>(ToSQLite.GetAllSymbols());
+            // TODO: add event to if a new one is added
             return oc;
         }
+
+        public string SymbolToDownload { get; set; }
+
+        public ICommand DownloadCommand => downloadCommand ??= CommandHelper.Create(p =>
+        {
+            // Just in case entry gets modified while we are downloading
+            var BackupName = SymbolToDownload;
+            if(SymbolToDownload == null || SymbolToDownload == string.Empty)
+            {
+                // TODO: Do some error handling
+                return;
+            }
+
+            // Task chain definition:
+            // Start downloading, Decode and save two last years
+            StockDownloader.DownloadTwoYears(SymbolToDownload).ContinueWith(t =>
+            {
+                // Read the symbol back to ( get size of the symbol mostly )
+                return ToSQLite.GetSpecificSymbol(BackupName);            
+            }).ContinueWith(t=>
+            {
+                // Set it on MainThread Context
+                downloadedFiles.Add(t.Result);
+            }, App.DispatcherScheduler);
+        });
+        private ICommand downloadCommand;
+
+        public ICommand RemoveCommand => removeCommand ??= CommandHelper.Create(p =>
+        {
+            if(p is Symbol S)
+            {
+                DownloadedFiles.Remove(S);
+                ToSQLite.RemoveData(S);
+            }
+            else
+            {
+                // TODO: Do some Error handling
+            }
+        });
+        private ICommand removeCommand;
     }
 }

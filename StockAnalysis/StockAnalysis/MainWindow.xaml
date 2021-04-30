@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StockAnalysis"
         mc:Ignorable="d" ResizeMode="CanResize"
-        Title="RG Stock Analysis" Height="450" Width="800">
+        Title="RG Stock Analysis" Height="450" Width="800"
+        x:Name="MainWin">
     <WindowChrome.WindowChrome>
         <WindowChrome/>
     </WindowChrome.WindowChrome>
@@ -41,11 +42,26 @@
             <StackPanel Margin="5" Grid.Row="0">
                 <TextBlock Text="Stock Analysis"/>
                 <TextBox Text="{Binding Path=., Source={x:Static local:App.APIKEY}}"/>
+                <TextBlock Text="Download More:"/>
+                <TextBox Text=""/>
+                <Button Command="{Binding DownloadCommand}">
+                    <Button.Content>
+                        <TextBlock Text="Start Download"/>
+                    </Button.Content>
+                </Button>
+                <TextBlock Text="Downloaded Symbols:"/>
             </StackPanel>
             <ListView Grid.Row="1" ItemsSource="{Binding DownloadedFiles}">
                 <ListView.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Name}"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="25"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Name}"/>
+                            <Button Grid.Column="1" Command="{Binding ElementName=MainWin, Path=DataContext.RemoveCommand}" CommandParameter="{Binding Path=.}"/>
+                        </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

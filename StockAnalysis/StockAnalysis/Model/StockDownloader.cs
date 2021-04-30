@@ -42,7 +42,7 @@ namespace StockAnalysis.Model
             "year2month12",
         };
 
-        public async Task DownloadTwoYears(string symbol)
+        public static async Task DownloadTwoYears(string symbol)
         {
             /*
             // Step 0 | Download First
@@ -100,7 +100,7 @@ namespace StockAnalysis.Model
                         {
                             return null;
                         }
-                        BinaryFileOperations.SaveToBinaryFile(SaveNext, symbol);
+                        ToSQLite.AddData(symbol, SaveNext);
                         
                         // Does not return anything. Create new "object" so we dont return null;
                         return new object(); 
@@ -134,7 +134,7 @@ namespace StockAnalysis.Model
             // 3
         }
 
-        public async Task<Stream> DownlaodToArray(string symbol, int slice = 0)
+        public static async Task<Stream> DownlaodToArray(string symbol, int slice = 0)
         {
             StringBuilder ApiCommand = new StringBuilder();
             ApiCommand.Append($"https://www.alphavantage.co/query?");       // Adress start of query
@@ -151,7 +151,7 @@ namespace StockAnalysis.Model
             return s;
         }
 
-        public StockMoment[] CSVDecoder(Stream s)
+        public static StockMoment[] CSVDecoder(Stream s)
         {
             // Initialize Some Variables
             int commaCount = 0;
