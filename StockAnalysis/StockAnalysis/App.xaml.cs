@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace StockAnalysis
 {
@@ -30,11 +31,16 @@ namespace StockAnalysis
         public static SynchronizationContext dispatcherSyncroContext;
         public static SynchronizationContext initDispatcherSyncroContext()
         {
-            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext(App.Current.Dispatcher));
             return SynchronizationContext.Current;
         }
-        public static TaskScheduler DispatcherScheduler => dispatcherScheduler ??= TaskScheduler.FromCurrentSynchronizationContext();
+        public static TaskScheduler DispatcherScheduler => dispatcherScheduler ??= initDispatcherScheduler();
         public static TaskScheduler dispatcherScheduler;
+        public static TaskScheduler initDispatcherScheduler()
+        {
+            _ = DispatcherSyncroContext; 
+            return TaskScheduler.FromCurrentSynchronizationContext();
+        }
 
         public static string APIKEY { get; set; } = "WEWF8LKFM1UXNU6X";
     }

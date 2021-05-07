@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace StockAnalysis.Model
@@ -148,6 +150,36 @@ namespace StockAnalysis.Model
             var s = await x.Content.ReadAsStreamAsync();
 
             return s;
+        }
+
+        public static List<StockMoment> CSVDecoderNew(Stream s)
+        {
+            // Precondition checks
+            if(s == null)
+            {
+                return null;
+            }
+
+            // Create variables
+            var sr = new StreamReader(s);
+            var FilesContent = sr.ReadToEnd();
+            var regexPattern = "([0 - 9 - :.]+),([0 - 9.] +),([0 - 9.] +),([0 - 9.] +),([0 - 9.] +),([0 - 9.] +)";
+            var m = Regex.Match(FilesContent, regexPattern);
+
+            var ReturnMoments = new List<StockMoment>();
+            do
+            {
+                var sm = new StockMoment();
+                sm.Time     = DateTime.Parse(m.Groups[1].Value);
+                sm.Open     = double.Parse(m.Groups[2].Value);
+                sm.High     = double.Parse(m.Groups[3].Value);
+                sm.Low      = double.Parse(m.Groups[4].Value);
+                sm.Close    = double.Parse(m.Groups[5].Value);
+                sm.Volume   = double.Parse(m.Groups[6].Value);
+                ReturnMoments.Add(sm);
+            } while (null != m.NextMatch());
+
+            return ReturnMoments;
         }
 
         public static StockMoment[] CSVDecoder(Stream s)

@@ -1,5 +1,7 @@
 ﻿using StockAnalysis.Model;
 using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace StockAnalysis.ViewModel
@@ -10,8 +12,16 @@ namespace StockAnalysis.ViewModel
         private ObservableCollection<Symbol> downloadedFiles;
         private ObservableCollection<Symbol> initDownlaodedFiles()
         {
-            var oc = new ObservableCollection<Symbol>(ToSQLite.GetAllSymbols());
-            // TODO: add event to if a new one is added
+            var oc = new ObservableCollection<Symbol>();
+
+            Task.Run(ToSQLite.GetAllSymbols().ToList).ContinueWith(t => 
+            { 
+                foreach(var symbol in t.Result)
+                {
+                    oc.Add(symbol);
+                }
+            }, App.DispatcherScheduler);
+
             return oc;
         }
 
