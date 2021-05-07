@@ -29,6 +29,8 @@ namespace StockAnalysis.Model
 
         public static void SaveToBinaryFile(IEnumerable<StockMoment> Input, FileInfo fi)
         {
+            // TODO: Make this work again
+            /*
             var fs = fi.OpenWrite();
             fs.Position = fs.Length;
             foreach (var mom in Input)
@@ -49,6 +51,7 @@ namespace StockAnalysis.Model
                 fs.Write(BitConverter.GetBytes(mom.Volume));
             }
             fs.Close();
+            */
         }
 
         public static StockMoment[] FromFile(string Symbol)
@@ -94,7 +97,7 @@ namespace StockAnalysis.Model
 
         private static Action<StockMoment, byte[]>[] DecoderFuncs = new Action<StockMoment, byte[]>[]
         {
-            (i, d) => { i.Time = BitConverter.ToInt64(d); },
+            (i, d) => { i.Time = new DateTime(BitConverter.ToInt64(d)); },
             (i, d) => { i.High = BitConverter.ToDouble(d); },
             (i, d) => { i.Low = BitConverter.ToDouble(d); },
             (i, d) => { i.Open = BitConverter.ToDouble(d); },

@@ -43,7 +43,7 @@
                 <TextBlock Text="Stock Analysis"/>
                 <TextBox Text="{Binding Path=., Source={x:Static local:App.APIKEY}}"/>
                 <TextBlock Text="Download More:"/>
-                <TextBox Text=""/>
+                <TextBox Text="{Binding SymbolToDownload, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 <Button Command="{Binding DownloadCommand}">
                     <Button.Content>
                         <TextBlock Text="Start Download"/>

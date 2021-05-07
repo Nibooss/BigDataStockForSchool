@@ -22,7 +22,17 @@ namespace StockAnalysis.Model
                 openDatabase ??= InitOpenDatabase();
                 if (openDatabase.State == System.Data.ConnectionState.Closed)
                 {
-                    openDatabase.Open();
+                    for (int ErrorCount = 0; ErrorCount < 5; ErrorCount++)
+                    {
+                        try
+                        {
+                            openDatabase.Open();
+                        }
+                        catch
+                        {
+                            Task.Delay(250).Wait();
+                        }
+                    }
                 }
                 return openDatabase;
             }
@@ -40,7 +50,17 @@ namespace StockAnalysis.Model
             var csb = new SqliteConnectionStringBuilder();
             csb.DataSource = DBFile.FullName;
             var db = new SqliteConnection(csb.ConnectionString);
-            db.Open();
+            for (int ErrorCount = 0; ErrorCount < 5; ErrorCount++)
+            {
+                try
+                {
+                    db.Open();
+                }
+                catch
+                {
+                    Task.Delay(250).Wait();
+                }
+            }
             return db;
         }
 
@@ -52,7 +72,7 @@ namespace StockAnalysis.Model
             }
         }
 
-        public static void InitializeDatabase(string symbol)
+        public static void InitializeDatabase()
         {
             string tableCommand =
                 $"CREATE TABLE IF NOT EXISTS MetaTable" +
@@ -81,6 +101,11 @@ namespace StockAnalysis.Model
 
         public static void AddData(string symbol, StockMoment[] input)
         {
+            if(input == null)
+            {
+                return;
+            }
+
             // Does entry allready exists?
             var selectCommand = new SqliteCommand($"SELECT * from MetaTable WHERE Symbol LIKE '{symbol}'", OpenDatabase);
 
@@ -97,47 +122,50 @@ namespace StockAnalysis.Model
 
             var createTable = new SqliteCommand($"CREATE TABLE IF NOT EXISTS {symbol}" +
                 $"(" +
-                $"Primary_Key INTEGER PRIMARY KEY, " +
                 $"Time TEXT," +
-                $"Open BLOB" +
-                $"High BLOB," +
-                $"Low BLOB," +
-                $"Close BLOB," +
-                $"Volume BLOB" +
+                $"Open REAL," +
+                $"High REAL," +
+                $"Low REAL," +
+                $"Close REAL," +
+                $"Volume REAL" +
                 $")", OpenDatabase);
-            createTable.ExecuteReader();
+            createTable.ExecuteNonQuery();
 
 
             SqliteCommand insertCommand = new SqliteCommand();
             insertCommand.Connection = OpenDatabase;
-            insertCommand.CommandText = $"INSERT INTO {symbol} VALUES (NULL, @Time, @Open, @High, @Low, @Close, @Volume);";
+            insertCommand.CommandText = $"INSERT INTO {symbol} (Time, Open, High, Low, Close, Volume) VALUES (@t,@o,@h,@l,@c,@v)";
 
             // Count how many are inserted
             int DataRowCount = 0;
 
             foreach(var inp in input)
             {
+                if(inp == null)
+                {
+                    continue;
+                }
                 // If all those are 0 data is actually empty so do not save it!
                 if(0 == inp.Open + inp.High + inp.Low + inp.Close + inp.Volume)
                 {
                     continue;
                 }
-
-                insertCommand.Parameters.AddWithValue("@Time",      inp.Time.ToString(DT_FORMAT));
-                insertCommand.Parameters.AddWithValue("@Open",      inp.Open);
-                insertCommand.Parameters.AddWithValue("@High",      inp.High);
-                insertCommand.Parameters.AddWithValue("@Low",       inp.Low);
-                insertCommand.Parameters.AddWithValue("@Close",     inp.Close);
-                insertCommand.Parameters.AddWithValue("@Volume",    inp.Volume);
-                insertCommand.ExecuteReader();
+                insertCommand.Parameters.Clear();
+                insertCommand.Parameters.AddWithValue("@t",  inp.Time.ToString(DT_FORMAT));
+                insertCommand.Parameters.AddWithValue("@o",  inp.Open);
+                insertCommand.Parameters.AddWithValue("@h",  inp.High);
+                insertCommand.Parameters.AddWithValue("@l",  inp.Low);
+                insertCommand.Parameters.AddWithValue("@c",  inp.Close);
+                insertCommand.Parameters.AddWithValue("@v",  inp.Volume);
+                insertCommand.ExecuteNonQuery();
                 DataRowCount++;
             }
 
             // Override in MetaTable
             var replaceCommand = new SqliteCommand();
-            replaceCommand.CommandText = $"REPLACE INTO MetaTable VALUES(@Symbol, @Size)";
-            replaceCommand.Parameters.AddWithValue("@Symbol", symbol);
-            replaceCommand.Parameters.AddWithValue("@Size", DataRowCount);
+            replaceCommand.CommandText = $"REPLACE INTO MetaTable (Symbol, Size) VALUES (@sy,@si)";
+            replaceCommand.Parameters.AddWithValue("@sy", symbol);
+            replaceCommand.Parameters.AddWithValue("@si", DataRowCount);
 
             CloseDatabase();
         }
@@ -157,7 +185,7 @@ namespace StockAnalysis.Model
         }
         public static Symbol GetSpecificSymbol(string Name)
         {
-            var selectCommand = new SqliteCommand($"SELECT * from MetaTable WHERE 'Name' LIKE {Name}", OpenDatabase);
+            var selectCommand = new SqliteCommand($"SELECT * from MetaTable WHERE Name LIKE {Name}", OpenDatabase);
             var selectQuery = selectCommand.ExecuteReader();
 
             selectQuery.Read();
@@ -172,7 +200,6 @@ namespace StockAnalysis.Model
         {
             // Meta Command
             var MetaCommand = new SqliteCommand($"SELECT * from MetaTable WHERE Symbol LIKE '{symbol}'", OpenDatabase);
-            MetaCommand.ExecuteReader();
             var MetaQuery = MetaCommand.ExecuteReader();
             int NumOfData = MetaQuery.GetInt32(1);
 
@@ -185,7 +212,7 @@ namespace StockAnalysis.Model
             for(int i = 0; i < NumOfData; i++)
             {
                 var sm = new StockMoment();
-                //sm.Time     = DateTime.Parse((string)query.GetValue(0));
+                sm.Time     = DateTime.Parse(query.GetString(0));
                 sm.Open = (double)query.GetValue(1);
                 sm.High = (double)query.GetValue(2);
                 sm.Low = (double)query.GetValue(3);

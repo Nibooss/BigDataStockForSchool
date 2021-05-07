@@ -32,7 +32,7 @@ namespace StockAnalysis.ViewModel
 
         public bool CanExecute(object parameter)
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         public void Execute(object parameter)
@@ -54,7 +54,7 @@ namespace StockAnalysis.ViewModel
 
         public bool CanExecute(object parameter)
         {
-            throw new NotImplementedException();
+            return true;
         }
 
         public void Execute(object parameter)

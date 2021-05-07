@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -9,7 +8,7 @@ namespace StockAnalysis.Model
 {
     public class StockDownloader
     {
-        private HttpClient Client = new HttpClient();
+        private static HttpClient Client = new HttpClient();
 
         public static string[] Slices => new string[]
         {
@@ -80,12 +79,12 @@ namespace StockAnalysis.Model
                 // CSV Decode
                 T[1] = Task<object>.Run(() => 
                 {
+                    if (ConvertNext == null)
+                    {
+                        return null;
+                    }
                     lock (ConvertNext) 
                     {
-                        if (ConvertNext == null)
-                        {
-                            return null;
-                        }
                         // Return SaveNextArray
                         return (object)CSVDecoder(ConvertNext); 
                     }
@@ -93,13 +92,13 @@ namespace StockAnalysis.Model
 
                 // Save To Binary
                 T[2] = Task<object>.Run(() => 
-                { 
+                {
+                    if (SaveNext == null)
+                    {
+                        return null;
+                    }
                     lock (SaveNext)
                     {
-                        if(SaveNext == null)
-                        {
-                            return null;
-                        }
                         ToSQLite.AddData(symbol, SaveNext);
                         
                         // Does not return anything. Create new "object" so we dont return null;
@@ -140,7 +139,7 @@ namespace StockAnalysis.Model
             ApiCommand.Append($"https://www.alphavantage.co/query?");       // Adress start of query
             ApiCommand.Append($"function=TIME_SERIES_INTRADAY_EXTENDED");   // Function
             ApiCommand.Append($"&symbol={symbol}");                         // Symbol
-            ApiCommand.Append($"&interval=1min");                           // interval
+            ApiCommand.Append($"&interval=15min");                           // interval
             ApiCommand.Append($"&slice={Slices[slice]}");                   // slice
             ApiCommand.Append($"&adjusted=false");                          // not adjusted
             ApiCommand.Append($"&apikey={App.APIKEY}");                     // API Key
@@ -195,7 +194,7 @@ namespace StockAnalysis.Model
                     try
                     {
                         Moments[dayCounter] = new StockMoment() {
-                            Time     = ((DateTimeOffset)new DateTime(QuickDT[0], QuickDT[1], QuickDT[2], QuickDT[3], QuickDT[4], QuickDT[5])).ToUnixTimeSeconds(),
+                            Time    = new DateTime(QuickDT[0], QuickDT[1], QuickDT[2], QuickDT[3], QuickDT[4], QuickDT[5]),
                             Open    = values[1, 0] + values[1, 1] / 10,
                             High    = values[2, 0] + values[2, 1] / 10,
                             Low     = values[3, 0] + values[3, 1] / 10,
