@@ -99,7 +99,7 @@ namespace StockAnalysis.Model
             RemoveData(symbol.Name);
         }
 
-        public static void AddData(string symbol, StockMoment[] input)
+        public static void AddData(string symbol, IEnumerable<StockMoment> input)
         {
             if(input == null)
             {

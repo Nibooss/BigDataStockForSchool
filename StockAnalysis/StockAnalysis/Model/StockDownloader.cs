@@ -43,99 +43,68 @@ namespace StockAnalysis.Model
             "year2month12",
         };
 
-        public static async Task DownloadTwoYears(string symbol)
+        public static List<StockMoment> DownloadTwoYears(string symbol)
         {
-            /*
-            // Step 0 | Download First
-            var Stream_00 = DownlaodToArray(symbol, 0).Result;
+            // Precondition
+            if(symbol == null)
+            {
+                return null;
+            }
 
-            // Step 1 | Download Second Convert First
-            var Stream_01 = DownlaodToArray(symbol, 1).Result;
-            var Array_00 = CSVDecoder(Stream_00);
-
-            // Step 2 | Download Third, Convert Second, Save Third
-            BinaryFileOperations.SaveToBinaryFile(Array_00, symbol);
-            var Stream_02 = DownlaodToArray(symbol, 2);
-            var Array_01 = CSVDecoder(Stream_01);
-            */
-
-            // Local Variables
-            Stream ConvertNext = null;
-            StockMoment[] SaveNext = null;
-            
-            // Actual Function
+            // Variables
+            Task LastDBTask = Task.CompletedTask;
+            Task<string> LastDonloadTask = Task.Run(() => { return string.Empty; });
+            Task LastToListTask = Task.CompletedTask;
+            var retValue = new List<StockMoment>();
+            // Download
             for (int i = 0; i < Slices.Length; i++)
             {
-                var T = new Task<object>[3];
-
-                // Download
-                T[0] = Task.Run(() => 
+                int ThisLoopsSlice = i;
+                LastDonloadTask = LastDonloadTask.ContinueWith(t =>
                 {
-                    if (symbol == null)
-                    {
-                        return null;
-                    }
-                    return (object)DownlaodToArray(symbol, i).Result; ;
+                    return DownlaodToString(symbol, ThisLoopsSlice);
                 });
 
-                // CSV Decode
-                T[1] = Task<object>.Run(() => 
+                var TDecoder = LastDonloadTask.ContinueWith(t =>
                 {
-                    if (ConvertNext == null)
+                    return CSVDecoderNew(t.Result);
+                });
+
+                LastToListTask = Task.WhenAll(new Task[] { TDecoder, LastToListTask }).ContinueWith(t =>
+                {
+                    lock (retValue)
                     {
-                        return null;
-                    }
-                    lock (ConvertNext) 
-                    {
-                        // Return SaveNextArray
-                        return (object)CSVDecoder(ConvertNext); 
+                        foreach (var sm in TDecoder.Result)
+                        {
+                            retValue.Add(sm);
+                        }
                     }
                 });
 
-                // Save To Binary
-                T[2] = Task<object>.Run(() => 
+                LastDBTask = Task.WhenAll(new Task[] { TDecoder, LastDBTask }).ContinueWith(t =>
                 {
-                    if (SaveNext == null)
-                    {
-                        return null;
-                    }
-                    lock (SaveNext)
-                    {
-                        ToSQLite.AddData(symbol, SaveNext);
-                        
-                        // Does not return anything. Create new "object" so we dont return null;
-                        return new object(); 
-                    }
+                    ToSQLite.AddData(symbol, TDecoder.Result);
                 });
-
-                // Wait until all Tasks are done.
-                await Task.WhenAll(T);
-
-                // Reasign Variables for next loop
-                var NoNull = false; // Stays false if all are null
-                if (T[0].Result != null)
-                {
-                    ConvertNext = (Stream)T[0].Result;
-                    NoNull = true;
-                }
-                if (T[1].Result != null)
-                {
-                    SaveNext = (StockMoment[])T[1].Result;
-                    NoNull = true;
-                }
-                if(T[2].Result != null)
-                {
-                    NoNull = true;
-                }
-                if(NoNull == false)
-                {
-                    break;
-                }
             }
-            // 3
+
+            Task.WaitAll(new Task[] { LastDBTask, LastDonloadTask, LastToListTask });
+
+            return retValue;
         }
 
-        public static async Task<Stream> DownlaodToArray(string symbol, int slice = 0)
+        
+
+        public static string DownlaodToString(string symbol, int slice = 0)
+        {
+            var stream = DownlaodToStream(symbol, slice);
+            var sr = new StreamReader(stream);
+            var retString = sr.ReadToEnd();
+            sr.Dispose();
+            stream.Dispose();
+            return retString;
+        }
+
+        public static Stream DownlaodToStream(string symbol, int slice = 0)
         {
             StringBuilder ApiCommand = new StringBuilder();
             ApiCommand.Append($"https://www.alphavantage.co/query?");       // Adress start of query
@@ -146,13 +115,19 @@ namespace StockAnalysis.Model
             ApiCommand.Append($"&adjusted=false");                          // not adjusted
             ApiCommand.Append($"&apikey={App.APIKEY}");                     // API Key
 
-            var x = await Client.GetAsync(ApiCommand.ToString());
-            var s = await x.Content.ReadAsStreamAsync();
+            var x = Client.GetAsync(ApiCommand.ToString());
+            var s = x.Result.Content.ReadAsStreamAsync();
 
-            return s;
+            return s.Result;
         }
 
         public static List<StockMoment> CSVDecoderNew(Stream s)
+        {
+            var sr = new StreamReader(s);
+            return CSVDecoderNew(sr.ReadToEnd());
+        }
+
+        public static List<StockMoment> CSVDecoderNew(string s)
         {
             // Precondition checks
             if(s == null)
@@ -161,13 +136,13 @@ namespace StockAnalysis.Model
             }
 
             // Create variables
-            var sr = new StreamReader(s);
-            var FilesContent = sr.ReadToEnd();
-            var regexPattern = "([0 - 9 - :.]+),([0 - 9.] +),([0 - 9.] +),([0 - 9.] +),([0 - 9.] +),([0 - 9.] +)";
-            var m = Regex.Match(FilesContent, regexPattern);
+            // TODO: Move somewhere else
+            // For the Extended history files. Should be somewhere else
+            var regexPattern = "([0-9- :.]+),([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+),([0-9.]+)";
+            var m = Regex.Match(s, regexPattern);
 
             var ReturnMoments = new List<StockMoment>();
-            do
+            while (m.Success)
             {
                 var sm = new StockMoment();
                 sm.Time     = DateTime.Parse(m.Groups[1].Value);
@@ -177,7 +152,8 @@ namespace StockAnalysis.Model
                 sm.Close    = double.Parse(m.Groups[5].Value);
                 sm.Volume   = double.Parse(m.Groups[6].Value);
                 ReturnMoments.Add(sm);
-            } while (null != m.NextMatch());
+                m = m.NextMatch();
+            } 
 
             return ReturnMoments;
         }

@@ -1,12 +1,13 @@
 ﻿using StockAnalysis.Model;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace StockAnalysis.ViewModel
 {
-    class MainWindowContext
+    class MainWindowContext : INotifyPropertyChanged
     {
         public ObservableCollection<Symbol> DownloadedFiles => downloadedFiles ??= initDownlaodedFiles();
         private ObservableCollection<Symbol> downloadedFiles;
@@ -39,14 +40,20 @@ namespace StockAnalysis.ViewModel
 
             // Task chain definition:
             // Start downloading, Decode and save two last years
-            StockDownloader.DownloadTwoYears(SymbolToDownload).ContinueWith(t =>
+            Task.Run(() =>
             {
-                // Read the symbol back to ( get size of the symbol mostly )
-                return ToSQLite.GetSpecificSymbol(BackupName);            
+                var arr = StockDownloader.DownloadTwoYears(SymbolToDownload).ToArray();
+                return arr;
             }).ContinueWith(t=>
             {
                 // Set it on MainThread Context
-                downloadedFiles.Add(t.Result);
+                var s = new Symbol()
+                {
+                    Name = BackupName,
+                    Data = t.Result,
+                    Size = t.Result.Length,
+                };
+                DownloadedFiles.Add(s);
             }, App.DispatcherScheduler);
         });
         private ICommand downloadCommand;
@@ -64,5 +71,7 @@ namespace StockAnalysis.ViewModel
             }
         });
         private ICommand removeCommand;
+
+        public event PropertyChangedEventHandler PropertyChanged;
     }
 }
