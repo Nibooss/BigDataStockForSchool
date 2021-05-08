@@ -8,8 +8,14 @@ using System.Threading.Tasks;
 
 namespace StockAnalysis.Model
 {
-    public class StockDownloader
+    public static class StockDownloader
     {
+        public static Progress StockDownloaderProgress  { get; set; } = new Progress() { Name = "Download:" };
+        public static Progress StockDecoderProgress     { get; set; } = new Progress() { Name = "Decoder:" };
+        public static Progress StockSaverProgress       { get; set; } = new Progress() { Name = "Saver:" };
+        public static Progress AllProgress              { get; set; } = new Progress() { Name = "All:" };
+
+
         private static HttpClient Client = new HttpClient();
 
         public static string[] Slices => new string[]
@@ -51,6 +57,11 @@ namespace StockAnalysis.Model
                 return null;
             }
 
+            StockDownloaderProgress.Init(Slices.Length);
+            StockDecoderProgress.Init(Slices.Length);
+            StockSaverProgress.Init(Slices.Length);
+            AllProgress.Init(Slices.Length * 3);
+
             // Variables
             Task LastDBTask = Task.CompletedTask;
             Task<string> LastDonloadTask = Task.Run(() => { return string.Empty; });
@@ -62,11 +73,15 @@ namespace StockAnalysis.Model
                 int ThisLoopsSlice = i;
                 LastDonloadTask = LastDonloadTask.ContinueWith(t =>
                 {
+                    AllProgress.NotifyProgress();
+                    StockDownloaderProgress.NotifyProgress();
                     return DownlaodToString(symbol, ThisLoopsSlice);
                 });
 
                 var TDecoder = LastDonloadTask.ContinueWith(t =>
                 {
+                    StockDecoderProgress.NotifyProgress();
+                    AllProgress.NotifyProgress();
                     return CSVDecoderNew(t.Result);
                 });
 
@@ -84,10 +99,18 @@ namespace StockAnalysis.Model
                 LastDBTask = Task.WhenAll(new Task[] { TDecoder, LastDBTask }).ContinueWith(t =>
                 {
                     ToSQLite.AddData(symbol, TDecoder.Result);
+                    StockSaverProgress.NotifyProgress();
+                    AllProgress.NotifyProgress();
                 });
             }
 
+
             Task.WaitAll(new Task[] { LastDBTask, LastDonloadTask, LastToListTask });
+
+            StockDownloaderProgress.Done();
+            StockDecoderProgress.Done();
+            StockSaverProgress.Done();
+            AllProgress.Done();
 
             return retValue;
         }

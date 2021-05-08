@@ -72,6 +72,15 @@ namespace StockAnalysis.ViewModel
         });
         private ICommand removeCommand;
 
+        public Progress[] Progresses => new Progress[]
+        {
+            StockDownloader.StockDownloaderProgress,
+            StockDownloader.StockDecoderProgress,
+            StockDownloader.StockSaverProgress,
+            StockDownloader.AllProgress,
+            ToSQLite.CurrentProgress,
+        };
+
         public event PropertyChangedEventHandler PropertyChanged;
     }
 }

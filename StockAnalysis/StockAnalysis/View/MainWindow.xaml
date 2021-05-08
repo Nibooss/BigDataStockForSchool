@@ -3,7 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:StockAnalysis"
+        xmlns:local="clr-namespace:StockAnalysis.View"
+        xmlns:model="clr-namespace:StockAnalysis.Model"
+        xmlns:a="clr-namespace:StockAnalysis"
         mc:Ignorable="d" ResizeMode="CanResize"
         Title="RG Stock Analysis" Height="450" Width="800"
         x:Name="MainWin">
@@ -29,6 +31,10 @@
             <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="7*"/>
         </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
 
         <Rectangle Grid.Column="0" Fill="Gray"/>
         <GridSplitter Grid.Column="0" Width="3"/>
@@ -41,7 +47,7 @@
             </Grid.RowDefinitions>
             <StackPanel Margin="5" Grid.Row="0">
                 <TextBlock Text="Stock Analysis"/>
-                <TextBox Text="{Binding Path=., Source={x:Static local:App.APIKEY}}"/>
+                <TextBox Text="{Binding Path=., Source={x:Static a:App.APIKEY}}"/>
                 <TextBlock Text="Download More:"/>
                 <TextBox Text="{Binding SymbolToDownload, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                 <Button Command="{Binding DownloadCommand}">
@@ -66,6 +72,20 @@
                 </ListView.ItemTemplate>
             </ListView>
         </Grid>
+
+        <ItemsControl ItemsSource="{Binding Progresses}" Grid.Row="1" Grid.ColumnSpan="99">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type model:Progress}">
+                    <Border Visibility="{Binding Path=IsBusy, Converter={local:Bool2Value TrueValue={x:Static Visibility.Visible}, FalseValue={x:Static Visibility.Collapsed}}}">
+                        <StackPanel>
+                            <TextBlock Grid.Row="0" Text="{Binding Name}" Foreground="White"/>
+                            <TextBlock Grid.Row="1" Text="{Binding Path=CurrentString, Mode=OneWay}" Foreground="Wheat"/>
+                            <ProgressBar Grid.Row="1" MinHeight="24" Minimum="0.0" Maximum="1.0" Value="{Binding Path=Current, Mode=OneWay}"/>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
     </Grid>
     
 </Window>
