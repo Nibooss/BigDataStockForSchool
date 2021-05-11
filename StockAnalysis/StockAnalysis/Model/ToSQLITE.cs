@@ -18,7 +18,7 @@ namespace StockAnalysis.Model
     {
         public static Progress CurrentProgress { get; set; } = new Progress() { Name = "Current Save" };
 
-        const string DT_FORMAT = "yyyy-MM-ddTHH:mm:ssZ";
+        const string DT_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
         private static SqliteConnection OpenDatabase
         {
@@ -176,7 +176,7 @@ namespace StockAnalysis.Model
             insertCommand.CommandText = $"INSERT INTO {symbol} (Time, Open, High, Low, Close, Volume) VALUES (@t,@o,@h,@l,@c,@v)";
 
 
-            SyncModeOff.ExecuteNonQuery();
+            //SyncModeOff.ExecuteNonQuery();
             MemoryJurnal.ExecuteNonQuery();
             BeginTransaction.ExecuteNonQuery();
             foreach (var inp in input)

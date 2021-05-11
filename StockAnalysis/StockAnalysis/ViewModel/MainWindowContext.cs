@@ -25,6 +25,7 @@ namespace StockAnalysis.ViewModel
 
             return oc;
         }
+        StockDownloader Downloader = new StockDownloader();
 
         public string SymbolToDownload { get; set; }
 
@@ -32,6 +33,7 @@ namespace StockAnalysis.ViewModel
         {
             // Just in case entry gets modified while we are downloading
             var BackupName = SymbolToDownload;
+
             if(SymbolToDownload == null || SymbolToDownload == string.Empty)
             {
                 // TODO: Do some error handling
@@ -42,7 +44,7 @@ namespace StockAnalysis.ViewModel
             // Start downloading, Decode and save two last years
             Task.Run(() =>
             {
-                var arr = StockDownloader.DownloadTwoYears(SymbolToDownload).ToArray();
+                var arr = Downloader.DownloadTwoYears(SymbolToDownload).ToArray();
                 return arr;
             }).ContinueWith(t=>
             {
@@ -74,10 +76,10 @@ namespace StockAnalysis.ViewModel
 
         public Progress[] Progresses => new Progress[]
         {
-            StockDownloader.StockDownloaderProgress,
-            StockDownloader.StockDecoderProgress,
-            StockDownloader.StockSaverProgress,
-            StockDownloader.AllProgress,
+            Downloader.StockDownloaderProgress,
+            Downloader.StockDecoderProgress,
+            Downloader.StockSaverProgress,
+            Downloader.AllProgress,
             ToSQLite.CurrentProgress,
         };
 

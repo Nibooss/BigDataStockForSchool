@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Text;
@@ -8,13 +9,16 @@ using System.Threading.Tasks;
 
 namespace StockAnalysis.Model
 {
-    public static class StockDownloader
+    public class StockDownloader
     {
-        public static Progress StockDownloaderProgress  { get; set; } = new Progress() { Name = "Download:" };
-        public static Progress StockDecoderProgress     { get; set; } = new Progress() { Name = "Decoder:" };
-        public static Progress StockSaverProgress       { get; set; } = new Progress() { Name = "Saver:" };
-        public static Progress AllProgress              { get; set; } = new Progress() { Name = "All:" };
+        public Progress StockDownloaderProgress  { get; set; } = new Progress() { Name = "Download:" };
+        public Progress StockDecoderProgress     { get; set; } = new Progress() { Name = "Decoder:" };
+        public Progress StockSaverProgress       { get; set; } = new Progress() { Name = "Saver:" };
+        public Progress AllProgress              { get; set; } = new Progress() { Name = "All:" };
 
+        private static Task LastDBTask = Task.CompletedTask;
+        private static Task<string> LastDonloadTask = Task.Run(() => { return string.Empty; });
+        private static Task LastToListTask = Task.CompletedTask;
 
         private static HttpClient Client = new HttpClient();
 
@@ -49,7 +53,7 @@ namespace StockAnalysis.Model
             "year2month12",
         };
 
-        public static List<StockMoment> DownloadTwoYears(string symbol)
+        public List<StockMoment> DownloadTwoYears(string symbol)
         {
             // Precondition
             if(symbol == null)
@@ -57,15 +61,15 @@ namespace StockAnalysis.Model
                 return null;
             }
 
-            StockDownloaderProgress.Init(Slices.Length);
+            int WaitSteps = 52;
+
+            StockDownloaderProgress.Init(Slices.Length * WaitSteps);
             StockDecoderProgress.Init(Slices.Length);
             StockSaverProgress.Init(Slices.Length);
-            AllProgress.Init(Slices.Length * 3);
+            AllProgress.Init(Slices.Length * 3 + Slices.Length * WaitSteps);
 
             // Variables
-            Task LastDBTask = Task.CompletedTask;
-            Task<string> LastDonloadTask = Task.Run(() => { return string.Empty; });
-            Task LastToListTask = Task.CompletedTask;
+            
             var retValue = new List<StockMoment>();
             // Download
             for (int i = 0; i < Slices.Length; i++)
@@ -73,9 +77,18 @@ namespace StockAnalysis.Model
                 int ThisLoopsSlice = i;
                 LastDonloadTask = LastDonloadTask.ContinueWith(t =>
                 {
-                    AllProgress.NotifyProgress();
-                    StockDownloaderProgress.NotifyProgress();
-                    return DownlaodToString(symbol, ThisLoopsSlice);
+                    var DLStart = DateTime.Now;
+                    var ret = DownlaodToString(symbol, ThisLoopsSlice);
+                    for(int i = 0; i < WaitSteps; i++)
+                    {
+                        AllProgress.NotifyProgress();
+                        StockDownloaderProgress.NotifyProgress();
+                        if((i * 250) > (DateTime.Now - DLStart).TotalMilliseconds)
+                        {
+                            Task.Delay(250).Wait();
+                        }
+                    }
+                    return ret;
                 });
 
                 var TDecoder = LastDonloadTask.ContinueWith(t =>
@@ -117,7 +130,7 @@ namespace StockAnalysis.Model
 
         
 
-        public static string DownlaodToString(string symbol, int slice = 0)
+        public string DownlaodToString(string symbol, int slice = 0)
         {
             var stream = DownlaodToStream(symbol, slice);
             var sr = new StreamReader(stream);
@@ -127,13 +140,13 @@ namespace StockAnalysis.Model
             return retString;
         }
 
-        public static Stream DownlaodToStream(string symbol, int slice = 0)
+        public Stream DownlaodToStream(string symbol, int slice = 0)
         {
             StringBuilder ApiCommand = new StringBuilder();
             ApiCommand.Append($"https://www.alphavantage.co/query?");       // Adress start of query
             ApiCommand.Append($"function=TIME_SERIES_INTRADAY_EXTENDED");   // Function
             ApiCommand.Append($"&symbol={symbol}");                         // Symbol
-            ApiCommand.Append($"&interval=15min");                           // interval
+            ApiCommand.Append($"&interval=1min");                           // interval
             ApiCommand.Append($"&slice={Slices[slice]}");                   // slice
             ApiCommand.Append($"&adjusted=false");                          // not adjusted
             ApiCommand.Append($"&apikey={App.APIKEY}");                     // API Key
@@ -169,11 +182,11 @@ namespace StockAnalysis.Model
             {
                 var sm = new StockMoment();
                 sm.Time     = DateTime.Parse(m.Groups[1].Value);
-                sm.Open     = double.Parse(m.Groups[2].Value);
-                sm.High     = double.Parse(m.Groups[3].Value);
-                sm.Low      = double.Parse(m.Groups[4].Value);
-                sm.Close    = double.Parse(m.Groups[5].Value);
-                sm.Volume   = double.Parse(m.Groups[6].Value);
+                sm.Open     = double.Parse(m.Groups[2].Value, CultureInfo.InvariantCulture);
+                sm.High     = double.Parse(m.Groups[3].Value, CultureInfo.InvariantCulture);
+                sm.Low      = double.Parse(m.Groups[4].Value, CultureInfo.InvariantCulture);
+                sm.Close    = double.Parse(m.Groups[5].Value, CultureInfo.InvariantCulture);
+                sm.Volume   = double.Parse(m.Groups[6].Value, CultureInfo.InvariantCulture);
                 ReturnMoments.Add(sm);
                 m = m.NextMatch();
             } 
