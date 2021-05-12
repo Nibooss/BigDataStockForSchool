@@ -54,10 +54,10 @@ namespace StockAnalysis.Model
 
         static readonly TimeSpan TS_WAIT_TIME = TimeSpan.FromSeconds(13);
 
-        public List<StockMoment> DownloadTwoYears(string symbol)
+        public async Task<List<StockMoment>> DownloadTwoYears(string symbolName)
         {
             // Precondition
-            if(symbol == null)
+            if(symbolName == null)
             {
                 return null;
             }
@@ -72,9 +72,28 @@ namespace StockAnalysis.Model
             for (int i = 0; i < Slices.Length; i++)
             {
                 int ThisLoopsSlice = i;
-                LastDonloadTask = DownloadOneMonthTask(symbol, ThisLoopsSlice, domp =>
+                LastDonloadTask = LastDonloadTask.ContinueWith(t =>
                 {
-                    StockDownloaderProgress.SetProgress(ThisLoopsSlice + domp);
+                    var DLEnd = DateTime.Now + TS_WAIT_TIME;
+
+                    var WaitProgress = 0.0;
+                    var DownloadProgress = 0.0;
+                    var ReturnTask = Task.Run(() =>
+                    {
+                        return DownlaodToString(symbolName, i, (dwp) =>
+                        {
+                            DownloadProgress = dwp;
+                        });
+                    });
+
+                    while (DLEnd > DateTime.Now)
+                    {
+                        Task.Delay(30).Wait();
+
+                        WaitProgress = DLEnd.Subtract(DateTime.Now).TotalSeconds / TS_WAIT_TIME.TotalSeconds;
+                        StockDownloaderProgress.SetProgress(i + (WaitProgress > DownloadProgress ? DownloadProgress : WaitProgress));
+                    }
+                    return ReturnTask.Result;
                 });
 
                 var TDecoder = LastDonloadTask.ContinueWith(t =>
@@ -97,7 +116,7 @@ namespace StockAnalysis.Model
 
                 LastDBTask = Task.WhenAll(new Task[] { TDecoder, LastDBTask }).ContinueWith(t =>
                 {
-                    ToSQLite.AddData(symbol, TDecoder.Result);
+                    ToSQLite.AddData(symbolName, TDecoder.Result);
                     StockSaverProgress.Advance();
                     AllProgress.Advance();
                 });
@@ -113,34 +132,9 @@ namespace StockAnalysis.Model
 
             return retValue;
         }
-
-
-
-        public static Task<string> DownloadOneMonthTask(string symbol, int thisLoopsSlice, Action<double> ProgressCallback = null)
-        {
-            return LastDonloadTask.ContinueWith(t =>
-            {
-                var DLEnd = DateTime.Now + TS_WAIT_TIME;
-
-                var WaitProgress = 0.0;
-                var DownloadProgress = 0.0;
-                var ret = DownlaodToStringAsync(symbol, thisLoopsSlice, dwp=> 
-                {
-                    DownloadProgress = dwp;
-                });
-
-                while(DLEnd > DateTime.Now)
-                {
-                    Task.Delay(30).Wait();
-
-                    WaitProgress = DLEnd.Subtract(DateTime.Now).TotalSeconds / TS_WAIT_TIME.TotalSeconds;
-                    ProgressCallback?.Invoke(WaitProgress > DownloadProgress ? DownloadProgress : WaitProgress);
-                }
-                return ret.Result;
-            });
-        }
         
-        public static async Task<string> DownlaodToStringAsync(string symbol, int slice = 0, Action<double> ProgressCallback = null)
+        
+        public static string DownlaodToString(string symbol, int slice = 0, Action<double> ProgressCallback = null)
         {
             string ApiCommand =
             $"https://www.alphavantage.co/query?" +     // Adress start of query
@@ -155,7 +149,7 @@ namespace StockAnalysis.Model
             response.EnsureSuccessStatusCode();
             var FileLength = response.Content.Headers.ContentLength;
 
-            var stream = await response.Content.ReadAsStreamAsync();
+            var stream = response.Content.ReadAsStreamAsync().Result;
 
             var totalBytesRead = 0L;
             var readCount = 0L;
@@ -166,7 +160,7 @@ namespace StockAnalysis.Model
 
             while (isMoreToRead)
             {
-                var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                var bytesRead = stream.ReadAsync(buffer, 0, buffer.Length).Result;
                 if (bytesRead == 0)
                 {
                     // Downlaod is done

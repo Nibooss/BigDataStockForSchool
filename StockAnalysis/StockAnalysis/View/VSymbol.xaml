@@ -1,0 +1,100 @@
+﻿<UserControl x:Class="StockAnalysis.View.VSymbol"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:StockAnalysis.View"
+             xmlns:vm="clr-namespace:StockAnalysis.ViewModel"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <ContentPresenter Content="{Binding}">
+        <ContentPresenter.ContentTemplate>
+            <DataTemplate DataType="{x:Type vm:VMSymbol}">
+                <DataTemplate.Triggers>
+                    <EventTrigger RoutedEvent="Loaded">
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation From="0.0" To="1.0" Duration="0:0:2.0" Storyboard.TargetName="root" Storyboard.TargetProperty="(local:MoreTags.DoubleTag_A)">
+                                    <DoubleAnimation.EasingFunction>
+                                        <CubicEase EasingMode="EaseOut"/>
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </EventTrigger>
+                    <DataTrigger Binding="{Binding IsDownloaded}" Value="False">
+                        <DataTrigger.EnterActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation To="Gray" Duration="0:0:5.0" Storyboard.TargetName="SymbolBGColorSide" Storyboard.TargetProperty="Color"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.EnterActions>
+                        <DataTrigger.ExitActions>
+                            <BeginStoryboard>
+                                <Storyboard>
+                                    <ColorAnimation To="#bada55" Duration="0:0:5.0" Storyboard.TargetName="SymbolBGColorSide" Storyboard.TargetProperty="Color"/>
+                                </Storyboard>
+                            </BeginStoryboard>
+                        </DataTrigger.ExitActions>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
+                <Border x:Name="root" BorderBrush="#bada55" BorderThickness="0.5" Margin="2" local:MoreTags.DoubleTag_A="0.0">
+                    <Border.Background>
+                        <LinearGradientBrush>
+                            <GradientStop x:Name="SymbolBGColorSide" Offset="{Binding DownloadProgress.TotalProgress}" Color="#bada55"/>
+                            <GradientStop Offset="-0.1" Color="#f000"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Border.Height>
+                        <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+*++}">
+                            <Binding RelativeSource="{RelativeSource Mode=Self}" Path="(local:MoreTags.DoubleTag_A)"/>
+                            <Binding ElementName="ActualContent" Path="ActualHeight"/>
+                            <Binding RelativeSource="{RelativeSource Mode=Self}" Path="BorderThickness.Top"/>
+                            <Binding RelativeSource="{RelativeSource Mode=Self}" Path="BorderThickness.Bottom"/>
+                        </MultiBinding>
+                    </Border.Height>
+                    <Border.ToolTip>
+                        <ToolTip Background="Black">
+                            <ItemsControl ItemsSource="{Binding ToolTipProgresses}">
+                                <ItemsControl.Template>
+                                    <ControlTemplate>
+                                        <ItemsPresenter/>
+                                    </ControlTemplate>
+                                </ItemsControl.Template>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:VMSymbol}">
+                                        <Border Margin="2">
+                                            <Border.Background>
+                                                <LinearGradientBrush>
+                                                    <GradientStop Offset="-0.5" Color="#000"/>
+                                                    <GradientStop x:Name="MainProgress" Offset="{Binding DownloadProgress.TotalProgress}" Color="#bada55"/>
+                                                    <GradientStop Color="#ff0000">
+                                                        <GradientStop.Offset>
+                                                            <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+, Offset=10}">
+                                                                <Binding ElementName="MainProgress" Path="Offset"/>
+                                                            </MultiBinding>
+                                                        </GradientStop.Offset>
+                                                    </GradientStop>
+                                                    <GradientStop Offset=" 1.5" Color="#000"/>
+                                                </LinearGradientBrush>
+                                            </Border.Background>
+                                            <TextBlock Text="{Binding Name}" Foreground="#bada55"/>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ToolTip>
+                    </Border.ToolTip>
+                    
+                    
+                    <Canvas ClipToBounds="True">
+                        <Grid x:Name="ActualContent">
+                            <TextBlock Text="{Binding Name}" Foreground="AliceBlue"/>
+                        </Grid>
+                    </Canvas>
+                </Border>
+            </DataTemplate>
+        </ContentPresenter.ContentTemplate>
+    </ContentPresenter>
+</UserControl>

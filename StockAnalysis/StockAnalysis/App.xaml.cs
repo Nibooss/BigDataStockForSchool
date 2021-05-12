@@ -39,7 +39,7 @@ namespace StockAnalysis
             return TaskScheduler.FromCurrentSynchronizationContext();
         }
 
-        public bool IsBusy
+        public int IsBusy
         {
             get
             {
@@ -51,7 +51,7 @@ namespace StockAnalysis
                 RaisePropertyChanged();
             }
         }
-        private bool isBusy;
+        private int isBusy;
         public static string APIKEY { get; set; } = "WEWF8LKFM1UXNU6X";
 
 

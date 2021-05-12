@@ -19,21 +19,21 @@ namespace StockAnalysis.Model
             add => onProgress += value;
             remove => onProgress -= value;
         }
-        public event EventHandler<MProgressEventArgs> onProgress;
+        private event EventHandler<MProgressEventArgs> onProgress;
 
         public event EventHandler<MProgressEventArgs> OnFinished
         {
             add => onFinished += value;
             remove => onFinished -= value;
         }
-        public event EventHandler<MProgressEventArgs> onFinished;
+        private event EventHandler<MProgressEventArgs> onFinished;
 
         public event EventHandler<MProgressEventArgs> OnStarted 
         { 
             add => onStarted += value;
             remove => onStarted -= value; 
         }
-        public event EventHandler<MProgressEventArgs> onStarted;
+        private event EventHandler<MProgressEventArgs> onStarted;
 
         public MProgress Start(int numItems)
         {
@@ -124,7 +124,12 @@ namespace StockAnalysis.Model
             }
         }
         private double doneItems;
-        public double Current => (double)DoneItems / (double)NumItems;
+        public double Current
+        {
+            get => current ?? (double)DoneItems / (double)NumItems;
+            set => current = value;
+        }
+        private double? current;
         public string CurrentString => $"{DoneItems}/{NumItems}";
     }
 }

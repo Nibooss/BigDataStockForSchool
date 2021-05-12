@@ -103,32 +103,32 @@ namespace StockAnalysis.Model
             new SqliteCommand($"DELETE FROM MetaTable WHERE Symbol like '{symbol}'", OpenDatabase).ExecuteNonQuery();
             CloseDatabase();
         }
-        public static void RemoveData(Symbol symbol)
+        public static void RemoveData(MSymbol symbol)
         {
             RemoveData(symbol.Name);
         }
 
-        public static IEnumerable<Symbol> GetAllSymbols()
+        public static IEnumerable<MSymbol> GetAllSymbols()
         {
             var selectCommand = new SqliteCommand($"SELECT * from MetaTable", OpenDatabase);
             var selectQuery = selectCommand.ExecuteReader();
 
             while (selectQuery.Read())
             {
-                yield return new Symbol()
+                yield return new MSymbol()
                 {
                     Name = selectQuery.GetString(1),
                     Size = selectQuery.GetInt32(2)
                 };
             }
         }
-        public static Symbol GetSpecificSymbol(string Name)
+        public static MSymbol GetSpecificSymbol(string Name)
         {
             var selectCommand = new SqliteCommand($"SELECT * from MetaTable WHERE Name LIKE {Name}", OpenDatabase);
             var selectQuery = selectCommand.ExecuteReader();
 
             selectQuery.Read();
-            return new Symbol()
+            return new MSymbol()
             {
                 Name = selectQuery.GetString(0),
                 Size = selectQuery.GetInt32(1)
@@ -139,7 +139,7 @@ namespace StockAnalysis.Model
         {
             if(input == null)
             {
-                return;
+                throw new ArgumentNullException("input was null");
             }
 
             return DBTask = DBTask.ContinueWith(t => 
@@ -150,7 +150,7 @@ namespace StockAnalysis.Model
                     return;
                 }
 
-                CurrentProgress.Init(numOfElements);
+                CurrentProgress.Start(numOfElements);
 
                 // Does entry allready exists?
                 var MetaTableQuery = new SqliteCommand($"SELECT size from MetaTable WHERE Symbol LIKE '{symbol}'", OpenDatabase).ExecuteReader();
@@ -203,7 +203,7 @@ namespace StockAnalysis.Model
                     insertCommand.Parameters.AddWithValue("@c",  inp.Close);
                     insertCommand.Parameters.AddWithValue("@v",  inp.Volume);
                     insertCommand.ExecuteNonQuery();
-                    CurrentProgress.NotifyProgress();
+                    CurrentProgress.Advance();
                     DataRowCount++;
                 }
                 EndTransaction.ExecuteNonQuery();

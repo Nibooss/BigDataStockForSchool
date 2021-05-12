@@ -10,17 +10,17 @@ namespace StockAnalysis.ViewModel
 {
     partial class MainWindowContext : INotifyPropertyChanged
     {
-        public ObservableCollection<Symbol> DownloadedFiles => downloadedFiles ??= initDownlaodedFiles();
-        private ObservableCollection<Symbol> downloadedFiles;
-        private ObservableCollection<Symbol> initDownlaodedFiles()
+        public ObservableCollection<VMSymbol> DownloadedFiles => downloadedFiles ??= initDownlaodedFiles();
+        private ObservableCollection<VMSymbol> downloadedFiles;
+        private ObservableCollection<VMSymbol> initDownlaodedFiles()
         {
-            var oc = new ObservableCollection<Symbol>();
+            var oc = new ObservableCollection<VMSymbol>();
 
             Task.Run(ToSQLite.GetAllSymbols().ToList).ContinueWith(t => 
             { 
-                foreach(var symbol in t.Result)
+                foreach(MSymbol symbol in t.Result)
                 {
-                    oc.Add(symbol);
+                    oc.Add(new VMSymbol(symbol));
                 }
             }, App.DispatcherScheduler);
 
@@ -30,40 +30,29 @@ namespace StockAnalysis.ViewModel
 
         public string SymbolToDownload { get; set; }
 
-        public ICommand DownloadCommand => downloadCommand ??= CommandHelper.Create(p =>
+        public ICommand AddSymbolCommand => addSymbolCommand ??= CommandHelper.Create(p =>
         {
             // Just in case entry gets modified while we are downloading
-            var BackupName = SymbolToDownload;
+            var SymbolName = p as string;
 
-            if(SymbolToDownload == null || SymbolToDownload == string.Empty)
+            if(SymbolName == null || SymbolName == string.Empty)
             {
                 // TODO: Do some error handling
                 return;
             }
 
-            // Task chain definition:
-            // Start downloading, Decode and save two last years
+            var newsymbol = new VMSymbol() { Name = SymbolName };
+            DownloadedFiles.Add(newsymbol);
             Task.Run(() =>
             {
-                var arr = Downloader.DownloadTwoYears(SymbolToDownload).ToArray();
-                return arr;
-            }).ContinueWith(t=>
-            {
-                // Set it on MainThread Context
-                var s = new Symbol()
-                {
-                    Name = BackupName,
-                    Data = t.Result,
-                    Size = t.Result.Length,
-                };
-                DownloadedFiles.Add(s);
-            }, App.DispatcherScheduler);
+                newsymbol.StartDownload();
+            });
         });
-        private ICommand downloadCommand;
+        private ICommand addSymbolCommand;
 
         public ICommand RemoveCommand => removeCommand ??= CommandHelper.Create(p =>
         {
-            if(p is Symbol S)
+            if(p is VMSymbol S)
             {
                 DownloadedFiles.Remove(S);
                 ToSQLite.RemoveData(S);
@@ -77,18 +66,9 @@ namespace StockAnalysis.ViewModel
 
         public ICommand ToggleBusy => toggleBusy ??= CommandHelper.Create(p =>
         {
-            App.app.IsBusy = !App.app.IsBusy;
+            App.app.IsBusy = App.app.IsBusy == 0 ? 1 : 0;
         });
         private ICommand toggleBusy;
-
-        public Progress[] Progresses => new Progress[]
-        {
-            Downloader.StockDownloaderProgress,
-            Downloader.StockDecoderProgress,
-            Downloader.StockSaverProgress,
-            Downloader.AllProgress,
-            ToSQLite.CurrentProgress,
-        };
 
         /// <summary>
         /// EventHandler for INotifyPropertyChanged interface
