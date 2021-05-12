@@ -16,7 +16,9 @@ namespace StockAnalysis.Model
 
     public static class ToSQLite
     {
-        public static Progress CurrentProgress { get; set; } = new Progress() { Name = "Current Save" };
+        static Task DBTask = Task.CompletedTask;
+
+        public static MProgress CurrentProgress { get; set; } = new MProgress() { Name = "Current Save" };
 
         const string DT_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
@@ -133,135 +135,92 @@ namespace StockAnalysis.Model
             };
         }
 
-        public static void AddData(string symbol, IEnumerable<StockMoment> input)
+        public static Task AddData(string symbol, IEnumerable<StockMoment> input)
         {
             if(input == null)
             {
                 return;
             }
-            int numOfElements = input.Count();
-            if(numOfElements == 0)
-            {
-                return;
-            }
 
-            CurrentProgress.Init(numOfElements);
-
-            // Does entry allready exists?
-            var MetaTableQuery = new SqliteCommand($"SELECT size from MetaTable WHERE Symbol LIKE '{symbol}'", OpenDatabase).ExecuteReader();
-
-            // Count how many are inserted
-            int DataRowCount = 0;
-            if (MetaTableQuery.Read())
-            {
-                DataRowCount = (int)MetaTableQuery.GetInt64(0);
-            }
-            else
-            {
-                var createTable = new SqliteCommand($"CREATE TABLE IF NOT EXISTS {symbol}" +
-                    $"(" +
-                    $"Time TEXT," +
-                    $"Open REAL," +
-                    $"High REAL," +
-                    $"Low REAL," +
-                    $"Close REAL," +
-                    $"Volume REAL" +
-                    $")", OpenDatabase);
-                createTable.ExecuteNonQuery();
-            }
-
-
-            SqliteCommand insertCommand = new SqliteCommand();
-            insertCommand.Connection = OpenDatabase;
-            insertCommand.CommandText = $"INSERT INTO {symbol} (Time, Open, High, Low, Close, Volume) VALUES (@t,@o,@h,@l,@c,@v)";
-
-
-            //SyncModeOff.ExecuteNonQuery();
-            MemoryJurnal.ExecuteNonQuery();
-            BeginTransaction.ExecuteNonQuery();
-            foreach (var inp in input)
-            {
-                if(inp == null)
+            return DBTask = DBTask.ContinueWith(t => 
+            { 
+                int numOfElements = input.Count();
+                if(numOfElements == 0)
                 {
-                    continue;
+                    return;
                 }
-                // If all those are 0 data is actually empty so do not save it!
-                if(0 == inp.Open + inp.High + inp.Low + inp.Close + inp.Volume)
+
+                CurrentProgress.Init(numOfElements);
+
+                // Does entry allready exists?
+                var MetaTableQuery = new SqliteCommand($"SELECT size from MetaTable WHERE Symbol LIKE '{symbol}'", OpenDatabase).ExecuteReader();
+
+                // Count how many are inserted
+                int DataRowCount = 0;
+                if (MetaTableQuery.Read())
                 {
-                    continue;
+                    DataRowCount = (int)MetaTableQuery.GetInt64(0);
                 }
-                insertCommand.Parameters.Clear();
-                insertCommand.Parameters.AddWithValue("@t",  inp.Time.ToString(DT_FORMAT));
-                insertCommand.Parameters.AddWithValue("@o",  inp.Open);
-                insertCommand.Parameters.AddWithValue("@h",  inp.High);
-                insertCommand.Parameters.AddWithValue("@l",  inp.Low);
-                insertCommand.Parameters.AddWithValue("@c",  inp.Close);
-                insertCommand.Parameters.AddWithValue("@v",  inp.Volume);
-                insertCommand.ExecuteNonQuery();
-                CurrentProgress.NotifyProgress();
-                DataRowCount++;
-            }
-            EndTransaction.ExecuteNonQuery();
-
-            // Override in MetaTable
-            var replaceCommand = new SqliteCommand(
-                $"REPLACE INTO MetaTable (Symbol, Size) VALUES (@sy,@si)", 
-                openDatabase);
-            replaceCommand.Parameters.AddWithValue("@sy", symbol);
-            replaceCommand.Parameters.AddWithValue("@si", DataRowCount);
-
-            replaceCommand.ExecuteNonQuery();
-
-            CurrentProgress.Done();
-
-            CloseDatabase();
-        }
-        public static void AddDataAsBlob(string symbol, IEnumerable<StockMoment> input)
-        {
-            if (input == null)
-            {
-                return;
-            }
-
-            // Does entry allready exists?
-            var selectCommand = new SqliteCommand($"SELECT * from MetaTable WHERE Symbol LIKE '{symbol}_blob'", OpenDatabase);
-
-            SqliteDataReader query = selectCommand.ExecuteReader();
-
-            // If it allready Existed. Remove its table
-            if (query.HasRows)
-            {
-                // Drop actual data
-                var removeCommand = new SqliteCommand();
-                removeCommand.CommandText = $"DROP TABLE [IF EXISTS] {symbol}_blob";
-                removeCommand.ExecuteReader();
-            }
-
-            var createTable = new SqliteCommand($"CREATE TABLE IF NOT EXISTS {symbol}_blob" +
-                $"(" +
-                $"AllMoments BLOB," +
-                $")", OpenDatabase);
-            createTable.ExecuteNonQuery();
+                else
+                {
+                    var createTable = new SqliteCommand($"CREATE TABLE IF NOT EXISTS {symbol}" +
+                        $"(" +
+                        $"Time TEXT," +
+                        $"Open REAL," +
+                        $"High REAL," +
+                        $"Low REAL," +
+                        $"Close REAL," +
+                        $"Volume REAL" +
+                        $")", OpenDatabase);
+                    createTable.ExecuteNonQuery();
+                }
 
 
-            SqliteCommand insertCommand = new SqliteCommand();
-            insertCommand.Connection = OpenDatabase;
-            insertCommand.CommandText = $"INSERT INTO {symbol} (AllMoments) VALUES (@b)";
+                SqliteCommand insertCommand = new SqliteCommand();
+                insertCommand.Connection = OpenDatabase;
+                insertCommand.CommandText = $"INSERT INTO {symbol} (Time, Open, High, Low, Close, Volume) VALUES (@t,@o,@h,@l,@c,@v)";
 
-            var MomentArray = input.ToArray();
-            var bf = new BinaryFormatter();
-            var ms = new MemoryStream();
-            bf.Serialize(ms,MomentArray);
-            var ByteArray = ms.ToArray();
-            insertCommand.Parameters.AddWithValue("@b", ms);
 
-            // Override in MetaTable
-            var replaceCommand = new SqliteCommand();
-            replaceCommand.CommandText = $"REPLACE INTO MetaTable (Symbol, Size) VALUES (@sy,@si)";
-            replaceCommand.Parameters.AddWithValue("@sy", symbol);
-            replaceCommand.Parameters.AddWithValue("@si", MomentArray.Length);
+                //SyncModeOff.ExecuteNonQuery();
+                MemoryJurnal.ExecuteNonQuery();
+                BeginTransaction.ExecuteNonQuery();
+                foreach (var inp in input)
+                {
+                    if(inp == null)
+                    {
+                        continue;
+                    }
+                    // If all those are 0 data is actually empty so do not save it!
+                    if(0 == inp.Open + inp.High + inp.Low + inp.Close + inp.Volume)
+                    {
+                        continue;
+                    }
+                    insertCommand.Parameters.Clear();
+                    insertCommand.Parameters.AddWithValue("@t",  inp.Time.ToString(DT_FORMAT));
+                    insertCommand.Parameters.AddWithValue("@o",  inp.Open);
+                    insertCommand.Parameters.AddWithValue("@h",  inp.High);
+                    insertCommand.Parameters.AddWithValue("@l",  inp.Low);
+                    insertCommand.Parameters.AddWithValue("@c",  inp.Close);
+                    insertCommand.Parameters.AddWithValue("@v",  inp.Volume);
+                    insertCommand.ExecuteNonQuery();
+                    CurrentProgress.NotifyProgress();
+                    DataRowCount++;
+                }
+                EndTransaction.ExecuteNonQuery();
 
-            CloseDatabase();
+                // Override in MetaTable
+                var replaceCommand = new SqliteCommand(
+                    $"REPLACE INTO MetaTable (Symbol, Size) VALUES (@sy,@si)", 
+                    openDatabase);
+                replaceCommand.Parameters.AddWithValue("@sy", symbol);
+                replaceCommand.Parameters.AddWithValue("@si", DataRowCount);
+
+                replaceCommand.ExecuteNonQuery();
+
+                CurrentProgress.Done();
+
+                CloseDatabase();
+            });
         }
         public static StockMoment[] ReadFromDB(string symbol)
         {
@@ -279,7 +238,7 @@ namespace StockAnalysis.Model
             for(int i = 0; i < NumOfData; i++)
             {
                 var sm = new StockMoment();
-                sm.Time     = DateTime.Parse(query.GetString(0));
+                sm.Time = DateTime.ParseExact(query.GetString(0), DT_FORMAT, null);
                 sm.Open = (double)query.GetValue(1);
                 sm.High = (double)query.GetValue(2);
                 sm.Low = (double)query.GetValue(3);
@@ -292,14 +251,8 @@ namespace StockAnalysis.Model
             CloseDatabase();
         }
 
-        public static SqliteCommand BeginTransaction => beginTransaction ??= initBeginTransaction;
-        private static SqliteCommand beginTransaction;
-        public static SqliteCommand initBeginTransaction => new SqliteCommand("BEGIN TRANSACTION", OpenDatabase);
-
-        public static SqliteCommand EndTransaction => endTransaction ??= initEndTransaction;
-        private static SqliteCommand endTransaction;
-        public static SqliteCommand initEndTransaction => new SqliteCommand("END TRANSACTION", OpenDatabase);
-
+        public static SqliteCommand BeginTransaction => new SqliteCommand("BEGIN TRANSACTION", OpenDatabase);
+        public static SqliteCommand EndTransaction => new SqliteCommand("END TRANSACTION", OpenDatabase);
         public static SqliteCommand MemoryJurnal => new SqliteCommand("PRAGMA journal_mode = MEMORY", OpenDatabase);
         public static SqliteCommand SyncModeOff => new SqliteCommand("PRAGMA synchronous = OFF", OpenDatabase);
     }

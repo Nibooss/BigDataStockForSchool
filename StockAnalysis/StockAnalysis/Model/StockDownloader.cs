@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,10 +10,10 @@ namespace StockAnalysis.Model
 {
     public class StockDownloader
     {
-        public Progress StockDownloaderProgress  { get; set; } = new Progress() { Name = "Download:" };
-        public Progress StockDecoderProgress     { get; set; } = new Progress() { Name = "Decoder:" };
-        public Progress StockSaverProgress       { get; set; } = new Progress() { Name = "Saver:" };
-        public Progress AllProgress              { get; set; } = new Progress() { Name = "All:" };
+        public MProgress StockDownloaderProgress { get; set; } = new MProgress() { Name = "Download:" };
+        public MProgress StockDecoderProgress { get; set; } = new MProgress() { Name = "Decoder:" };
+        public MProgress StockSaverProgress { get; set; } = new MProgress() { Name = "Saver:" };
+        public MProgress AllProgress { get; set; } = new MProgress() { Name = "All:" };
 
         private static Task LastDBTask = Task.CompletedTask;
         private static Task<string> LastDonloadTask = Task.Run(() => { return string.Empty; });
@@ -22,7 +21,7 @@ namespace StockAnalysis.Model
 
         private static HttpClient Client = new HttpClient();
 
-        public static string[] Slices => new string[]
+        static readonly string[] Slices = new string[]
         {
             "year1month1",
             "year1month2",
@@ -37,14 +36,14 @@ namespace StockAnalysis.Model
             "year1month10",
             "year1month11",
             "year1month12",
-            
+
             "year2month1",
             "year2month2",
             "year2month3",
             "year2month4",
             "year2month5",
             "year2month6",
-                 
+
             "year2month7",
             "year2month8",
             "year2month9",
@@ -52,6 +51,8 @@ namespace StockAnalysis.Model
             "year2month11",
             "year2month12",
         };
+
+        static readonly TimeSpan TS_WAIT_TIME = TimeSpan.FromSeconds(13);
 
         public List<StockMoment> DownloadTwoYears(string symbol)
         {
@@ -61,40 +62,25 @@ namespace StockAnalysis.Model
                 return null;
             }
 
-            int WaitSteps = 52;
+            StockDownloaderProgress.Start(Slices.Length);
+            StockDecoderProgress.Start(Slices.Length);
+            StockSaverProgress.Start(Slices.Length);
+            AllProgress.Start(Slices.Length * 4);
 
-            StockDownloaderProgress.Init(Slices.Length * WaitSteps);
-            StockDecoderProgress.Init(Slices.Length);
-            StockSaverProgress.Init(Slices.Length);
-            AllProgress.Init(Slices.Length * 3 + Slices.Length * WaitSteps);
-
-            // Variables
-            
             var retValue = new List<StockMoment>();
             // Download
             for (int i = 0; i < Slices.Length; i++)
             {
                 int ThisLoopsSlice = i;
-                LastDonloadTask = LastDonloadTask.ContinueWith(t =>
+                LastDonloadTask = DownloadOneMonthTask(symbol, ThisLoopsSlice, domp =>
                 {
-                    var DLStart = DateTime.Now;
-                    var ret = DownlaodToString(symbol, ThisLoopsSlice);
-                    for(int i = 0; i < WaitSteps; i++)
-                    {
-                        AllProgress.NotifyProgress();
-                        StockDownloaderProgress.NotifyProgress();
-                        if((i * 250) > (DateTime.Now - DLStart).TotalMilliseconds)
-                        {
-                            Task.Delay(250).Wait();
-                        }
-                    }
-                    return ret;
+                    StockDownloaderProgress.SetProgress(ThisLoopsSlice + domp);
                 });
 
                 var TDecoder = LastDonloadTask.ContinueWith(t =>
                 {
-                    StockDecoderProgress.NotifyProgress();
-                    AllProgress.NotifyProgress();
+                    StockDecoderProgress.Advance();
+                    AllProgress.Advance();
                     return CSVDecoderNew(t.Result);
                 });
 
@@ -112,8 +98,8 @@ namespace StockAnalysis.Model
                 LastDBTask = Task.WhenAll(new Task[] { TDecoder, LastDBTask }).ContinueWith(t =>
                 {
                     ToSQLite.AddData(symbol, TDecoder.Result);
-                    StockSaverProgress.NotifyProgress();
-                    AllProgress.NotifyProgress();
+                    StockSaverProgress.Advance();
+                    AllProgress.Advance();
                 });
             }
 
@@ -128,39 +114,77 @@ namespace StockAnalysis.Model
             return retValue;
         }
 
+
+
+        public static Task<string> DownloadOneMonthTask(string symbol, int thisLoopsSlice, Action<double> ProgressCallback = null)
+        {
+            return LastDonloadTask.ContinueWith(t =>
+            {
+                var DLEnd = DateTime.Now + TS_WAIT_TIME;
+
+                var WaitProgress = 0.0;
+                var DownloadProgress = 0.0;
+                var ret = DownlaodToStringAsync(symbol, thisLoopsSlice, dwp=> 
+                {
+                    DownloadProgress = dwp;
+                });
+
+                while(DLEnd > DateTime.Now)
+                {
+                    Task.Delay(30).Wait();
+
+                    WaitProgress = DLEnd.Subtract(DateTime.Now).TotalSeconds / TS_WAIT_TIME.TotalSeconds;
+                    ProgressCallback?.Invoke(WaitProgress > DownloadProgress ? DownloadProgress : WaitProgress);
+                }
+                return ret.Result;
+            });
+        }
         
-
-        public string DownlaodToString(string symbol, int slice = 0)
+        public static async Task<string> DownlaodToStringAsync(string symbol, int slice = 0, Action<double> ProgressCallback = null)
         {
-            var stream = DownlaodToStream(symbol, slice);
-            var sr = new StreamReader(stream);
-            var retString = sr.ReadToEnd();
-            sr.Dispose();
-            stream.Dispose();
-            return retString;
-        }
+            string ApiCommand =
+            $"https://www.alphavantage.co/query?" +     // Adress start of query
+            $"function=TIME_SERIES_INTRADAY_EXTENDED" + // Function
+            $"&symbol={symbol}" +                       // Symbol
+            $"&interval=1min" +                         // interval
+            $"&slice={Slices[slice]}" +                 // slice
+            $"&adjusted=false" +                        // not adjusted
+            $"&apikey={App.APIKEY}";                    // API Key
 
-        public Stream DownlaodToStream(string symbol, int slice = 0)
-        {
-            StringBuilder ApiCommand = new StringBuilder();
-            ApiCommand.Append($"https://www.alphavantage.co/query?");       // Adress start of query
-            ApiCommand.Append($"function=TIME_SERIES_INTRADAY_EXTENDED");   // Function
-            ApiCommand.Append($"&symbol={symbol}");                         // Symbol
-            ApiCommand.Append($"&interval=1min");                           // interval
-            ApiCommand.Append($"&slice={Slices[slice]}");                   // slice
-            ApiCommand.Append($"&adjusted=false");                          // not adjusted
-            ApiCommand.Append($"&apikey={App.APIKEY}");                     // API Key
+            var response = Client.GetAsync(ApiCommand.ToString(), HttpCompletionOption.ResponseHeadersRead).Result;
+            response.EnsureSuccessStatusCode();
+            var FileLength = response.Content.Headers.ContentLength;
 
-            var x = Client.GetAsync(ApiCommand.ToString());
-            var s = x.Result.Content.ReadAsStreamAsync();
+            var stream = await response.Content.ReadAsStreamAsync();
 
-            return s.Result;
-        }
+            var totalBytesRead = 0L;
+            var readCount = 0L;
+            var buffer = new byte[8192];
+            var isMoreToRead = true;
+            var sb = new StringBuilder();
 
-        public static List<StockMoment> CSVDecoderNew(Stream s)
-        {
-            var sr = new StreamReader(s);
-            return CSVDecoderNew(sr.ReadToEnd());
+
+            while (isMoreToRead)
+            {
+                var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                if (bytesRead == 0)
+                {
+                    // Downlaod is done
+                    isMoreToRead = false;
+                    continue;
+                }
+
+                sb.Append(Encoding.Default.GetString(buffer));
+
+                totalBytesRead += bytesRead;
+                readCount += 1;
+
+                if (readCount % 100 == 0)
+                {
+                    ProgressCallback?.Invoke((double)bytesRead / (double)FileLength);
+                }
+            }
+            return sb.ToString();
         }
 
         public static List<StockMoment> CSVDecoderNew(string s)
@@ -194,110 +218,5 @@ namespace StockAnalysis.Model
             return ReturnMoments;
         }
 
-        public static StockMoment[] CSVDecoder(Stream s)
-        {
-            // Initialize Some Variables
-            int commaCount = 0;
-            int dayCounter = 0;
-            byte[] buffer = new byte[1];
-            byte YMD = 0;
-            int[] QuickDT = new int[6];
-
-            bool Decimal = false;
-            double[,] values = new double[6,2];
-
-            // Determine size
-            s.Position = 0;
-            int NumberOfEntries = 0;
-            while (s.Read(buffer, 0, 1) > 0)
-            {
-                if (buffer[0] == '\n')
-                {
-                    NumberOfEntries++;
-                }
-            }
-            s.Position = 33;
-
-            StockMoment[] Moments = new StockMoment[NumberOfEntries];
-
-            int DecodedMoments = 0;
-
-            while(s.Read(buffer, 0, 1) > 0)
-            {
-                if(buffer[0] == ',')
-                {
-                    // Next Parameter
-                    commaCount++;
-                    Decimal = false;
-                }
-                else if(buffer[0] == '\n')
-                {
-                    // Next Day
-                    commaCount = 0;
-                    YMD = 0;
-                    try
-                    {
-                        Moments[dayCounter] = new StockMoment() {
-                            Time    = new DateTime(QuickDT[0], QuickDT[1], QuickDT[2], QuickDT[3], QuickDT[4], QuickDT[5]),
-                            Open    = values[1, 0] + values[1, 1] / 10,
-                            High    = values[2, 0] + values[2, 1] / 10,
-                            Low     = values[3, 0] + values[3, 1] / 10,
-                            Close   = values[4, 0] + values[4, 1] / 10,
-                            Volume  = values[5, 0] + values[5, 1] / 10,
-                        };
-                        DecodedMoments++;
-                    }
-                    catch
-                    {
-                        break;
-                    }
-                    dayCounter++;
-                    values = new double[6,2];
-                    QuickDT = new int[6];
-                }
-                else
-                {
-                    // Decode Day
-                    if(commaCount == 0)
-                    {
-                        // Decode DateTime
-                        if(buffer[0] < '0' || buffer[0] > '9')
-                        {
-                            YMD++;
-                        }
-                        else
-                        {
-                            QuickDT[YMD] *= 10;
-                            QuickDT[YMD] += buffer[0] - 48;
-                        }
-                    }
-                    else
-                    {
-                        // DecodeDouble
-                        if (buffer[0] == '.')
-                        {
-                            Decimal = true;
-                        }
-                        else
-                        {
-                            if(buffer[0] >= '0' && buffer[0] <= '9')
-                            {
-                                if (Decimal == false)
-                                {
-                                    values[commaCount, 0] *= 10;
-                                    values[commaCount, 0] += buffer[0] - 48;
-                                }
-                                else
-                                {
-                                    values[commaCount, 1] /= 10;
-                                    values[commaCount, 1] += buffer[0] - 48;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            return Moments;
-        }
     }
 }
