@@ -1,58 +1,93 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StockAnalysis.Model
 {
-    public class Progress : INotifyPropertyChanged
+    /// <summary>
+    /// A Viewmodel is supposed to subscribe to events from instances of this class.
+    /// It is supposed to encapsulate those events.
+    /// </summary>
+    public class MProgress
     {
-        public string Name 
+        public string Name { get; set; }
+
+        private MProgressEventArgs reuseEventArgs = new MProgressEventArgs();
+
+        public event EventHandler<MProgressEventArgs> OnProgress
+        {
+            add => onProgress += value;
+            remove => onProgress -= value;
+        }
+        public event EventHandler<MProgressEventArgs> onProgress;
+
+        public event EventHandler<MProgressEventArgs> OnFinished
+        {
+            add => onFinished += value;
+            remove => onFinished -= value;
+        }
+        public event EventHandler<MProgressEventArgs> onFinished;
+
+        public event EventHandler<MProgressEventArgs> OnStarted 
         { 
-            get => name;
+            add => onStarted += value;
+            remove => onStarted -= value; 
+        }
+        public event EventHandler<MProgressEventArgs> onStarted;
+
+        public MProgress Start(int numItems)
+        {
+            reuseEventArgs = new MProgressEventArgs()
+            {
+                NumItems = numItems,
+            };
+            reuseEventArgs.IsBusy = true;
+
+            onStarted?.Invoke(this, reuseEventArgs);
+            return this;
+        }
+
+        public int Advance(int NumProgresses = 1)
+        {
+            reuseEventArgs.DoneItems += NumProgresses;
+            reuseEventArgs.IsBusy = true;
+
+            onProgress?.Invoke(this, reuseEventArgs);
+            return reuseEventArgs.NumItems;
+        }
+
+        public int SetProgress(double NumProgresses)
+        {
+            reuseEventArgs.DoneItems = NumProgresses;
+            reuseEventArgs.IsBusy = true;
+
+            onProgress?.Invoke(this, reuseEventArgs);
+            return reuseEventArgs.NumItems;
+        }
+
+        public int Done()
+        {
+            reuseEventArgs.DoneItems = reuseEventArgs.NumItems;
+            reuseEventArgs.IsBusy = false;
+
+            onProgress?.Invoke(this, reuseEventArgs);
+            onFinished?.Invoke(this, reuseEventArgs);
+            return reuseEventArgs.NumItems;
+        }
+    }
+    public class MProgressEventArgs : EventArgs
+    {
+        public bool IsFinished
+        {
+            get
+            {
+                return isBusy == false;
+            }
             set
             {
-                name = value;
-                RaisePropertyChanged();
+                isBusy = value == false;
             }
         }
-        private string name;
-
-        public void Init(int NumberOfItems)
-        {
-            App.Current.Dispatcher.InvokeAsync(() =>
-            {
-                NumObjects = NumberOfItems;
-                IsBusy = true;
-                ProcessedItems = 0;
-            });
-        }
-        public void Done()
-        {
-            App.Current.Dispatcher.Invoke(() =>
-            {
-                IsBusy = false;
-            });
-        }
-        public void NotifyProgress(int processedItems = -1)
-        {
-            App.Current.Dispatcher.InvokeAsync(() =>
-            {
-                if (-1 == processedItems)
-                {
-                    ProcessedItems++;
-                }
-                else
-                {
-                    ProcessedItems = processedItems;
-                }
-            });
-        }
-
-
         public bool IsBusy
         {
             get
@@ -62,47 +97,34 @@ namespace StockAnalysis.Model
             set
             {
                 isBusy = value;
-                RaisePropertyChanged();
             }
         }
         private bool isBusy;
-        public int NumObjects
+        public int NumItems
         {
             get
             {
-                return numObjects;
+                return numItems;
             }
             set
             {
-                numObjects = value;
-                RaisePropertyChanged();
-                RaisePropertyChanged(nameof(Current));
-                RaisePropertyChanged(nameof(CurrentString));
+                numItems = value;
             }
         }
-        private int numObjects;
-        public int ProcessedItems
+        private int numItems;
+        public double DoneItems
         {
             get
             {
-                return processedItems == 0 ? 1 : processedItems;
+                return doneItems == 0 ? 1 : doneItems;
             }
             set
             {
-                processedItems = value;
-                RaisePropertyChanged();
-                RaisePropertyChanged(nameof(Current));
-                RaisePropertyChanged(nameof(CurrentString));
+                doneItems = value;
             }
         }
-        private int processedItems;
-        public double Current => (double)ProcessedItems / (double)NumObjects;
-        public string CurrentString => $"{ProcessedItems}/{NumObjects}";
-
-        public void RaisePropertyChanged([CallerMemberName] string propName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
-        }
-        public event PropertyChangedEventHandler PropertyChanged;
+        private double doneItems;
+        public double Current => (double)DoneItems / (double)NumItems;
+        public string CurrentString => $"{DoneItems}/{NumItems}";
     }
 }
