@@ -1,10 +1,7 @@
 ﻿using StockAnalysis.Model;
 using StockAnalysis.ViewModel;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -15,7 +12,7 @@ namespace StockAnalysis
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App : Application, INotifyPropertyChanged
     {
         public static App app => App.Current as App;
         public App()
@@ -38,10 +35,46 @@ namespace StockAnalysis
         public static TaskScheduler dispatcherScheduler;
         public static TaskScheduler initDispatcherScheduler()
         {
-            _ = DispatcherSyncroContext; 
+            _ = DispatcherSyncroContext;
             return TaskScheduler.FromCurrentSynchronizationContext();
         }
 
+        public bool IsBusy
+        {
+            get
+            {
+                return isBusy;
+            }
+            set
+            {
+                isBusy = value;
+                RaisePropertyChanged();
+            }
+        }
+        private bool isBusy;
         public static string APIKEY { get; set; } = "WEWF8LKFM1UXNU6X";
+
+
+        /// <summary>
+        /// EventHandler for INotifyPropertyChanged interface
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Function to simplify the INotifyPropertyChanged interface
+        /// </summary>
+        public void RaisePropertyChanged([CallerMemberName] string propName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        /// <summary>
+        /// Function to simplify the INotifyPropertyChanged interface
+        /// </summary>
+        public void RaisePropertyChanged(object caller, [CallerMemberName] string propName = null)
+        {
+            PropertyChanged?.Invoke(caller ?? this, new PropertyChangedEventArgs(propName));
+        }
+
     }
 }

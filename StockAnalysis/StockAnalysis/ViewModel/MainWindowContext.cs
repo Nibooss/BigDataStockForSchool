@@ -2,12 +2,13 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace StockAnalysis.ViewModel
 {
-    class MainWindowContext : INotifyPropertyChanged
+    partial class MainWindowContext : INotifyPropertyChanged
     {
         public ObservableCollection<Symbol> DownloadedFiles => downloadedFiles ??= initDownlaodedFiles();
         private ObservableCollection<Symbol> downloadedFiles;
@@ -74,6 +75,12 @@ namespace StockAnalysis.ViewModel
         });
         private ICommand removeCommand;
 
+        public ICommand ToggleBusy => toggleBusy ??= CommandHelper.Create(p =>
+        {
+            App.app.IsBusy = !App.app.IsBusy;
+        });
+        private ICommand toggleBusy;
+
         public Progress[] Progresses => new Progress[]
         {
             Downloader.StockDownloaderProgress,
@@ -83,6 +90,28 @@ namespace StockAnalysis.ViewModel
             ToSQLite.CurrentProgress,
         };
 
+        /// <summary>
+        /// EventHandler for INotifyPropertyChanged interface
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
+
+        /// <summary>
+        /// Function to simplify the INotifyPropertyChanged interface
+        /// </summary>
+        public void RaisePropertyChanged([CallerMemberName] string propName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        /// <summary>
+        /// Function to simplify the INotifyPropertyChanged interface
+        /// </summary>
+        public void RaisePropertyChanged(object caller, [CallerMemberName] string propName = null)
+        {
+            PropertyChanged?.Invoke(caller ?? this, new PropertyChangedEventArgs(propName));
+        }
+
     }
+
+    
 }

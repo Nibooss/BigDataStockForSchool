@@ -8,23 +8,90 @@
         xmlns:a="clr-namespace:StockAnalysis"
         mc:Ignorable="d" ResizeMode="CanResize"
         Title="RG Stock Analysis" Height="450" Width="800"
+        WindowStyle="SingleBorderWindow" MinWidth="800" MinHeight="400"
         x:Name="MainWin">
-    <WindowChrome.WindowChrome>
-        <WindowChrome/>
-    </WindowChrome.WindowChrome>
+    <Window.Resources>
+        <Style TargetType="{x:Type Button}" x:Key="but_ActionButton">
+            <Setter Property="Width" Value="{Binding RelativeSource={RelativeSource Mode=Self}, Path=ActualHeight}"/>
+            <Setter Property="Margin" Value="0,0,2,0"/>
+        </Style>
+        <SineEase x:Key="IsBusyBarEasingInner" EasingMode="EaseInOut"/>
+        <CubicEase x:Key="IsBusyBarEasingOuter" EasingMode="EaseInOut"/>
+    </Window.Resources>
+    <Window.Style>
+        <Style TargetType="{x:Type Window}">
+            <Setter Property="WindowChrome.WindowChrome">
+                <Setter.Value>
+                    <WindowChrome   CornerRadius="0"
+                                    NonClientFrameEdges="None"
+                                    UseAeroCaptionButtons="True"
+                                  />
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Style>
+    
     <Window.Template>
         <ControlTemplate TargetType="{x:Type Window}">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="{Binding Path=Top, Source={x:Static SystemParameters.WindowNonClientFrameThickness}}"/>
-                    <RowDefinition Height="1*"/>
-                </Grid.RowDefinitions>
-                <ContentControl Grid.Row="1" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}" Margin="{x:Static SystemParameters.WindowResizeBorderThickness}"/>
-            </Grid>
+            <ControlTemplate.Triggers>
+                <DataTrigger Binding="{Binding Path=IsBusy, Source={x:Static a:App.app}}" Value="True">
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Duration="0:0:2" From="-0.5" To="0.3" RepeatBehavior="Forever" AutoReverse="True" Storyboard.TargetName="IndicatorGradientStop0" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                                <DoubleAnimation Duration="0:0:2" From=" 0.0" To="1.0" RepeatBehavior="Forever" AutoReverse="True" Storyboard.TargetName="IndicatorGradientStop1" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingInner}"/>
+                                <DoubleAnimation Duration="0:0:2" From=" 0.7" To="1.5" RepeatBehavior="Forever" AutoReverse="True" Storyboard.TargetName="IndicatorGradientStop2" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <BeginStoryboard>
+                            <Storyboard>
+                                <DoubleAnimation Duration="0:0:1" To="-0.5"  Storyboard.TargetName="IndicatorGradientStop0" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                                <DoubleAnimation Duration="0:0:1" To=" 0.5"  Storyboard.TargetName="IndicatorGradientStop1" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingInner}"/>
+                                <DoubleAnimation Duration="0:0:1" To=" 1.5"  Storyboard.TargetName="IndicatorGradientStop2" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </ControlTemplate.Triggers>
+            
+            <Border BorderBrush="White" BorderThickness="0.5">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="{Binding Path=Top, Source={x:Static SystemParameters.WindowNonClientFrameThickness}}"/>
+                        <RowDefinition Height="{Binding Path=Top, Source={x:Static SystemParameters.WindowResizeBorderThickness}}"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+                    <Border x:Name="TopBar" Grid.Row="0">
+                        <Border.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop Offset="0.0" Color="#F000"/>
+                                <GradientStop Offset="0.7" Color="#ffbada55"/>
+                                <GradientStop Offset="1.0" Color="#0fff"/>
+                            </LinearGradientBrush>
+                        </Border.Background>
+                    </Border>
+
+                    <Rectangle Grid.Row="1" x:Name="IndicatorBar">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                <GradientStop x:Name="IndicatorGradientStop0" Offset="0.0" Color="#F000"/>
+                                <GradientStop x:Name="IndicatorGradientStop1" Offset="0.5" Color="#ffbada55"/>
+                                <GradientStop x:Name="IndicatorGradientStop2" Offset="1.0" Color="#F000"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+
+                    <Border Grid.Row="2" BorderBrush="Black" BorderThickness="4,0,4,4">
+                        
+                        <ContentControl Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"/>
+                    </Border>
+                </Grid>
+            </Border>
         </ControlTemplate>
     </Window.Template>
-
-
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"/>
@@ -37,7 +104,7 @@
         </Grid.RowDefinitions>
 
         <Rectangle Grid.Column="0" Fill="Gray"/>
-        <GridSplitter Grid.Column="0" Width="3"/>
+        <GridSplitter Grid.Column="0" Grid.RowSpan="99" Width="3"/>
         <Rectangle Grid.Column="1" Fill="SlateGray"/>
 
         <Grid Grid.Column="0">
@@ -45,7 +112,7 @@
                 <RowDefinition Height="auto"/>
                 <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
-            <StackPanel Margin="5" Grid.Row="0">
+            <StackPanel Margin="5" Grid.Row="0" VerticalAlignment="Stretch">
                 <TextBlock Text="Stock Analysis"/>
                 <TextBox Text="{Binding Path=., Source={x:Static a:App.APIKEY}}"/>
                 <TextBlock Text="Download More:"/>
@@ -56,6 +123,11 @@
                     </Button.Content>
                 </Button>
                 <TextBlock Text="Downloaded Symbols:"/>
+                <Button Command="{Binding ToggleBusy}">
+                    <Button.Content>
+                        <TextBlock Text="ToggleBusy"/>
+                    </Button.Content>
+                </Button>
             </StackPanel>
             <ListView Grid.Row="1" ItemsSource="{Binding DownloadedFiles}">
                 <ListView.ItemTemplate>
@@ -87,5 +159,5 @@
             </ItemsControl.ItemTemplate>
         </ItemsControl>
     </Grid>
-    
+
 </Window>
