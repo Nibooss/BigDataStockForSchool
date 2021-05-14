@@ -37,19 +37,31 @@
                 <DataTrigger Binding="{Binding Path=IsBusy, Source={x:Static a:App.app}}" Value="0">
                     <DataTrigger.ExitActions>
                         <BeginStoryboard>
-                            <Storyboard>
-                                <DoubleAnimation Duration="0:0:2" From="-0.5" To="0.3" RepeatBehavior="Forever" AutoReverse="True" Storyboard.TargetName="IndicatorGradientStop0" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
-                                <DoubleAnimation Duration="0:0:2" From=" 0.0" To="1.0" RepeatBehavior="Forever" AutoReverse="True" Storyboard.TargetName="IndicatorGradientStop1" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingInner}"/>
-                                <DoubleAnimation Duration="0:0:2" From=" 0.7" To="1.5" RepeatBehavior="Forever" AutoReverse="True" Storyboard.TargetName="IndicatorGradientStop2" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                            <Storyboard Duration="0:0:2.0001" RepeatBehavior="Forever" AutoReverse="False">
+                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="IndicatorGradientStop0" Storyboard.TargetProperty="Offset">
+                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.0" Value="-0.0"/>
+                                    <EasingDoubleKeyFrame   KeyTime="0:0:1.9999" Value="2.0" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                                    <DiscreteDoubleKeyFrame KeyTime="0:0:2.0" Value="-0.0"/>
+                                </DoubleAnimationUsingKeyFrames>
+                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="IndicatorGradientStop1" Storyboard.TargetProperty="Offset">
+                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.0" Value="-0.5"/>
+                                    <EasingDoubleKeyFrame   KeyTime="0:0:1.9999" Value="1.5" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                                    <DiscreteDoubleKeyFrame KeyTime="0:0:2.0" Value="-0.5"/>
+                                </DoubleAnimationUsingKeyFrames>
+                                <DoubleAnimationUsingKeyFrames Storyboard.TargetName="IndicatorGradientStop2" Storyboard.TargetProperty="Offset">
+                                    <DiscreteDoubleKeyFrame KeyTime="0:0:0.0" Value="-1.0"/>
+                                    <EasingDoubleKeyFrame   KeyTime="0:0:1.9999" Value="1.0" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                                    <DiscreteDoubleKeyFrame KeyTime="0:0:2.0" Value="-1.0"/>
+                                </DoubleAnimationUsingKeyFrames>
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.ExitActions>
                     <DataTrigger.EnterActions>
                         <BeginStoryboard>
                             <Storyboard>
-                                <DoubleAnimation Duration="0:0:1" To="-0.5"  Storyboard.TargetName="IndicatorGradientStop0" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                                <DoubleAnimation Duration="0:0:1" To="-0.0"  Storyboard.TargetName="IndicatorGradientStop0" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
                                 <DoubleAnimation Duration="0:0:1" To=" 0.5"  Storyboard.TargetName="IndicatorGradientStop1" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingInner}"/>
-                                <DoubleAnimation Duration="0:0:1" To=" 1.5"  Storyboard.TargetName="IndicatorGradientStop2" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
+                                <DoubleAnimation Duration="0:0:1" To=" 1.0"  Storyboard.TargetName="IndicatorGradientStop2" Storyboard.TargetProperty="Offset" EasingFunction="{StaticResource IsBusyBarEasingOuter}"/>
                             </Storyboard>
                         </BeginStoryboard>
                     </DataTrigger.EnterActions>
