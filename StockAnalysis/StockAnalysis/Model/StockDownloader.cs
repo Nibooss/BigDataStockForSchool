@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -80,7 +83,7 @@ namespace StockAnalysis.Model
                     var DownloadProgress = 0.0;
                     var ReturnTask = Task.Run(() =>
                     {
-                        return DownlaodToString(symbolName, i, (dwp) =>
+                        return DownlaodToString(symbolName, ThisLoopsSlice, (dwp) =>
                         {
                             DownloadProgress = dwp;
                         });
@@ -145,18 +148,20 @@ namespace StockAnalysis.Model
             $"&adjusted=false" +                        // not adjusted
             $"&apikey={App.APIKEY}";                    // API Key
 
-            var response = Client.GetAsync(ApiCommand.ToString(), HttpCompletionOption.ResponseHeadersRead).Result;
-            response.EnsureSuccessStatusCode();
-            var FileLength = response.Content.Headers.ContentLength;
+            
+            var response = WebRequest.Create(ApiCommand).GetResponse();
 
-            var stream = response.Content.ReadAsStreamAsync().Result;
+            var stream = response.GetResponseStream();
+            var sr = new StreamReader(stream);
+            return sr.ReadToEnd();
 
+            /*
+            var FileLength = response.ContentLength;
             var totalBytesRead = 0L;
             var readCount = 0L;
             var buffer = new byte[8192];
             var isMoreToRead = true;
             var sb = new StringBuilder();
-
 
             while (isMoreToRead)
             {
@@ -179,6 +184,7 @@ namespace StockAnalysis.Model
                 }
             }
             return sb.ToString();
+            */
         }
 
         public static List<StockMoment> CSVDecoderNew(string s)

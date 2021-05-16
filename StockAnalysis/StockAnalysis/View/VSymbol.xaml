@@ -64,23 +64,10 @@
                                 </ItemsControl.Template>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate DataType="{x:Type vm:VMSymbol}">
-                                        <Border Margin="2">
-                                            <Border.Background>
-                                                <LinearGradientBrush>
-                                                    <GradientStop Offset="-0.5" Color="#000"/>
-                                                    <GradientStop x:Name="MainProgress" Offset="{Binding DownloadProgress.TotalProgress}" Color="#bada55"/>
-                                                    <GradientStop Color="#ff0000">
-                                                        <GradientStop.Offset>
-                                                            <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+, Offset=10}">
-                                                                <Binding ElementName="MainProgress" Path="Offset"/>
-                                                            </MultiBinding>
-                                                        </GradientStop.Offset>
-                                                    </GradientStop>
-                                                    <GradientStop Offset=" 1.5" Color="#000"/>
-                                                </LinearGradientBrush>
-                                            </Border.Background>
-                                            <TextBlock Text="{Binding Name}" Foreground="#bada55"/>
-                                        </Border>
+                                        <Grid>
+                                            <ProgressBar Value="{Binding TotalProgress}" Minimum="0.0" Maximum="1.0"/>
+                                            <TextBlock Text="{Binding Name}" Foreground="Black" Margin="2"/>
+                                        </Grid>
                                     </DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>

@@ -92,6 +92,7 @@ namespace StockAnalysis.ViewModel
             set
             {
                 totalProgress = value;
+                RaisePropertyChanged();
             }
         }
         private double totalProgress;
