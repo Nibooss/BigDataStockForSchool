@@ -232,18 +232,17 @@ namespace StockAnalysis.Model
             var Buffer = new StockMoment[NumOfData];
 
             SqliteCommand selectCommand = new SqliteCommand($"SELECT * from {symbol}", OpenDatabase);
-
-            SqliteDataReader query = selectCommand.ExecuteReader();
+            SqliteDataReader selectQuery = selectCommand.ExecuteReader();
 
             for(int i = 0; i < NumOfData; i++)
             {
                 var sm = new StockMoment();
-                sm.Time = DateTime.ParseExact(query.GetString(0), DT_FORMAT, null);
-                sm.Open = (double)query.GetValue(1);
-                sm.High = (double)query.GetValue(2);
-                sm.Low = (double)query.GetValue(3);
-                sm.Close = (double)query.GetValue(4);
-                sm.Volume = (double)query.GetValue(5);
+                sm.Time = DateTime.ParseExact(selectQuery.GetString(0), DT_FORMAT, null);
+                sm.Open = (double)selectQuery.GetValue(1);
+                sm.High = (double)selectQuery.GetValue(2);
+                sm.Low = (double)selectQuery.GetValue(3);
+                sm.Close = (double)selectQuery.GetValue(4);
+                sm.Volume = (double)selectQuery.GetValue(5);
 
                 Buffer[i] = sm;
             }
