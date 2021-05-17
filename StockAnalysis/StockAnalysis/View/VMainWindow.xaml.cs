@@ -5,9 +5,9 @@ namespace StockAnalysis
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class VMainWindow : Window
     {
-        public MainWindow()
+        public VMainWindow()
         {
             InitializeComponent();
         }

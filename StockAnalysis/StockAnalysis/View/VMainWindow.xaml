@@ -1,9 +1,10 @@
-﻿<Window x:Class="StockAnalysis.MainWindow"
+﻿<Window x:Class="StockAnalysis.VMainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:StockAnalysis.View"
+        xmlns:viewModel="clr-namespace:StockAnalysis.ViewModel"
         xmlns:model="clr-namespace:StockAnalysis.Model"
         xmlns:a="clr-namespace:StockAnalysis"
         mc:Ignorable="d" ResizeMode="CanResize"
@@ -96,7 +97,6 @@
                     </Rectangle>
 
                     <Border Grid.Row="2" BorderBrush="Black" BorderThickness="4,0,4,4">
-                        
                         <ContentControl Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"/>
                     </Border>
                 </Grid>
@@ -114,6 +114,7 @@
             <RowDefinition Height="auto"/>
         </Grid.RowDefinitions>
 
+        <!-- Left Area Background -->
         <Rectangle Grid.Column="0" MinWidth="100">
             <Rectangle.Fill>
                 <RadialGradientBrush GradientOrigin="0.0,0.0" RadiusX="2.0" RadiusY="2.0">
@@ -132,34 +133,101 @@
             </Grid.RowDefinitions>
             <StackPanel Margin="5" Grid.Row="0" VerticalAlignment="Stretch">
                 <TextBlock Text="Stock Analysis"/>
-                <TextBox Text="{Binding Path=., Source={x:Static a:App.APIKEY}}"/>
-                <TextBlock Text="Add Symbol"/>
-                <TextBox x:Name="SymbolBox"/>
-                <Button Command="{Binding AddSymbolCommand}" CommandParameter="{Binding ElementName=SymbolBox, Path=Text}">
-                    <Button.Content>
-                        <TextBlock>
-                            <Run Text="Start Downloading:"/>
-                            <LineBreak/>
-                            <Run Text="{Binding ElementName=SymbolBox, Path=Text}"/>
-                        </TextBlock>
-                    </Button.Content>
-                </Button>
-                <TextBlock Text="Downloaded Symbols:"/>
-                <Button Command="{Binding ToggleBusy}">
-                    <Button.Content>
-                        <TextBlock Text="ToggleBusy"/>
-                    </Button.Content>
-                </Button>
             </StackPanel>
-            
-            <ItemsControl Grid.Row="1" ItemsSource="{Binding DownloadedFiles}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <local:VSymbol/>
+
+            <ListView Grid.Row="1" ItemsSource="{Binding SelectableViewModels}" SelectedItem="{Binding Path=SelectedItem}">
+                <ListView.Template>
+                    <ControlTemplate TargetType="{x:Type ListView}">
+                        <ItemsPresenter/>
+                    </ControlTemplate>
+                </ListView.Template>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}">
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                    <ContentPresenter Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <Control.Resources>
+                    <Color x:Key="localSelectedColor">#bada55</Color>
+                    <Color x:Key="localUnselectedColor">#000</Color>
+                    <Color x:Key="localUnselectedColorGlow">#5555</Color>
+
+                    <SolidColorBrush x:Key="localSelected"      Color="{StaticResource localSelectedColor}"/>
+                    <SolidColorBrush x:Key="localUnselected"    Color="{StaticResource localUnselectedColor}"/>
+                </Control.Resources>
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="{x:Type viewModel:Selectable}">
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Path=IsSelected}" Value="True">
+                                <DataTrigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Duration="0:0:1" To="{StaticResource localSelectedColor}" Storyboard.TargetProperty="Color" Storyboard.TargetName="DropShadow" EasingFunction="{StaticResource IsBusyBarEasingInner}"/>
+                                            <ColorAnimation Duration="0:0:0.3" To="{StaticResource localSelectedColor}" Storyboard.TargetProperty="BorderBrush.Color" Storyboard.TargetName="MainBorder"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.EnterActions>
+                                <DataTrigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <ColorAnimation Duration="0:0:1" To="{StaticResource localUnselectedColorGlow}" Storyboard.TargetProperty="Color" Storyboard.TargetName="DropShadow" EasingFunction="{StaticResource IsBusyBarEasingInner}"/>
+                                            <ColorAnimation Duration="0:0:0.3" To="{StaticResource localUnselectedColor}" Storyboard.TargetProperty="BorderBrush.Color" Storyboard.TargetName="MainBorder"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </DataTrigger.ExitActions>
+                            </DataTrigger>
+                        </DataTemplate.Triggers>
+                        <Grid Margin="4">
+                            <Border 
+                                x:Name="MainBorder"
+                                CacheMode="BitmapCache"
+                                BorderThickness="1"
+                                Background="#333">
+                                <Border.Effect>
+                                    <DropShadowEffect x:Name="DropShadow" Direction="0.0" BlurRadius="10" ShadowDepth="0" Opacity="1.0"/>
+                                </Border.Effect>
+                                <Border.BorderBrush>
+                                    <SolidColorBrush/>
+                                </Border.BorderBrush>
+                            </Border>
+                            <TextBlock Text="{Binding Path=Name}" Margin="5" Foreground="{StaticResource localSelected}">
+                            </TextBlock>
+                        </Grid>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+                </ListView.ItemTemplate>
+            </ListView>
         </Grid>
+
+        <ContentControl Grid.Column="1" Grid.Row="0" Content="{Binding Path=SelectedItem}">
+            <ContentControl.ContentTemplateSelector>
+                <local:TypeSelector>
+                    <DataTemplate DataType="{x:Type viewModel:VMMainMenu}">
+                        <local:VMainMenu DataContext="{Binding Path=Context, Mode=OneTime}"/>
+                    </DataTemplate>
+
+                    <DataTemplate DataType="{x:Type viewModel:VMDownloader}">
+                        <local:VDownloader DataContext="{Binding Path=Context, Mode=OneTime}"/>
+                    </DataTemplate>
+
+                    <DataTemplate DataType="{x:Type viewModel:VMGraphViewer}">
+                        <local:VGraphViewer DataContext="{Binding Path=Context, Mode=OneTime}"/>
+                    </DataTemplate>
+
+                    <DataTemplate DataType="{x:Type viewModel:VMTableViewer}">
+                        <local:VTableViewer DataContext="{Binding Path=Context, Mode=OneTime}"/>
+                    </DataTemplate>
+
+                    <DataTemplate DataType="{x:Type viewModel:VMOptions}">
+                        <local:VOptions DataContext="{Binding Path=Context, Mode=OneTime}"/>
+                    </DataTemplate>
+                </local:TypeSelector>
+            </ContentControl.ContentTemplateSelector>
+        </ContentControl>
     </Grid>
 
 </Window>

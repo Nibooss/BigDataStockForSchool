@@ -21,7 +21,7 @@ namespace StockAnalysis
         {
             ToSQLite.InitializeDatabase();
             //InitializeComponent(); // Stupid WPF bug. Not calling this function makes the xaml file pointles :/
-            app.MainWindow = new MainWindow();
+            app.MainWindow = new VMainWindow();
             app.MainWindow.DataContext = new MainWindowContext();
             app.MainWindow.Show();
         }

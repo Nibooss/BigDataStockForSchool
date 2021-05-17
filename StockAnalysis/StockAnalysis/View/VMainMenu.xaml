@@ -1,0 +1,48 @@
+﻿<UserControl x:Class="StockAnalysis.View.VMainMenu"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:StockAnalysis.View"
+             mc:Ignorable="d" x:Name="root"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Template>
+        <ControlTemplate TargetType="{x:Type UserControl}">
+            <ItemsControl x:Name="PanelTempalte" ItemsSource="{Binding SelectableViewModels}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate >
+                        <WrapPanel/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border MinHeight="250" MinWidth="450" Background="#888" Margin="15">
+                            <TextBlock Text="{Binding Name}"/>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ControlTemplate.Triggers>
+                <DataTrigger Binding="{Binding ElementName=root, Path=ActualWidth, Converter={local:Double2Bool Cutoff=1000}}" Value="True">
+                    <Setter TargetName="PanelTempalte" Property="ItemsPanel">
+                        <Setter.Value>
+                            <ItemsPanelTemplate>
+                                <WrapPanel/>
+                            </ItemsPanelTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+                <DataTrigger Binding="{Binding ElementName=root, Path=ActualWidth, Converter={local:Double2Bool Cutoff=980}}" Value="False">
+                    <Setter TargetName="PanelTempalte" Property="ItemsPanel">
+                        <Setter.Value>
+                            <ItemsPanelTemplate>
+                                <StackPanel/>
+                            </ItemsPanelTemplate>
+                        </Setter.Value>
+                    </Setter>
+                </DataTrigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+    </UserControl.Template>
+</UserControl>
