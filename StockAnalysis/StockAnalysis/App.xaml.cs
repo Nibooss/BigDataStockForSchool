@@ -1,4 +1,5 @@
 ﻿using StockAnalysis.Model;
+using StockAnalysis.View;
 using StockAnalysis.ViewModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -14,16 +15,17 @@ namespace StockAnalysis
     /// </summary>
     public partial class App : Application, INotifyPropertyChanged
     {
-        public static App app => App.Current as App;
-
+        public static App app = Application.Current as App;
         public static new App Current => Application.Current as App;
         public App()
         {
+            this.Resources = new GeneralResources();
+
             ToSQLite.InitializeDatabase();
             //InitializeComponent(); // Stupid WPF bug. Not calling this function makes the xaml file pointles :/
-            app.MainWindow = new VMainWindow();
-            app.MainWindow.DataContext = new MainWindowContext();
-            app.MainWindow.Show();
+            Current.MainWindow = new VMainWindow();
+            Current.MainWindow.DataContext = new MainWindowContext();
+            Current.MainWindow.Show();
         }
 
         public static SynchronizationContext DispatcherSyncroContext => dispatcherSyncroContext ??= initDispatcherSyncroContext();

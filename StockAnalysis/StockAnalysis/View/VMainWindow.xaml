@@ -225,6 +225,10 @@
                     <DataTemplate DataType="{x:Type viewModel:VMOptions}">
                         <local:VOptions DataContext="{Binding Path=Context, Mode=OneTime}"/>
                     </DataTemplate>
+
+                    <DataTemplate DataType="{x:Type viewModel:VMHeatMap}">
+                        <local:VHeatMap DataContext="{Binding Path=Context, Mode=OneTime}"/>
+                    </DataTemplate>
                 </local:TypeSelector>
             </ContentControl.ContentTemplateSelector>
         </ContentControl>

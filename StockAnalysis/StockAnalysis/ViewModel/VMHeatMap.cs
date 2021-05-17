@@ -1,24 +1,70 @@
 ﻿using StockAnalysis.Model;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 namespace StockAnalysis.ViewModel
 {
+    public static class IEnumExtensions
+    {
+        public static IEnumerable<Tto> ConvertWith<Tto,Tfrom>(this IEnumerable<Tfrom> ts, Func<Tfrom, Tto> func)
+        {
+            foreach(Tfrom o in ts)
+            {
+                var temp = func.Invoke(o);
+                if (null != temp)
+                {
+                    yield return temp;
+                }
+            }
+        }
+    }
+
     public class VMHeatMap : INotifyPropertyChanged
     {
+        
 
-        public string SymbolName
+
+        /// <summary>
+        /// Provides all symbols that can be selected
+        /// Set calls INotifyPropertyChanded helper function.
+        /// </summary>
+        public List<VMSymbol> Symbols
         {
-            get { return symbolName; }
-            set { symbolName = value; }
+            get
+            {
+                return _Symbols ??= ToSQLite.GetAllSymbols().ConvertWith(s => new VMSymbol(s)).ToList();
+            }
+            set
+            {
+                _Symbols = value;
+                RaisePropertyChanged();
+            }
         }
-        private string symbolName;
+        /// <summary>
+        /// Holds all symbols that can be selected
+        /// </summary>
+        private List<VMSymbol> _Symbols;
 
-        public StockMoment[] Data { get; set; }
+
+
+
+        public VMSymbol Symbol
+        {
+            get => _Symbol.Value;
+            set => _Symbol.Value = value;
+        }
+        private Updateable<VMSymbol> _Symbol = new Updateable<VMSymbol>();
+
+
+        public StockMoment[] Data
+        {
+            get => (_Data ??= new Updateable<StockMoment[]>(_Symbol)).Value;
+            set => _Data.Value = value;
+        }
+        private Updateable<StockMoment[]> _Data;
 
 
         /// <summary>
@@ -66,6 +112,15 @@ namespace StockAnalysis.ViewModel
 
     public class Updateable<T> : IUpdateable
     {
+        public Updateable()
+        {
+
+        }
+        public Updateable(IUpdateable parent)
+        {
+            Parent = parent;
+        }
+
         public T Value
         {
             get

@@ -12,6 +12,7 @@ namespace StockAnalysis.ViewModel
             new SelectableMenuEntry(){Name="Downloader",  Value=typeof(VMDownloader),   Context=new VMDownloader()},
             new SelectableMenuEntry(){Name="Graph",       Value=typeof(VMGraphViewer),  Context=typeof(VMStockDataProvider)},
             new SelectableMenuEntry(){Name="Table",       Value=typeof(VMTableViewer),  Context=typeof(VMStockDataProvider)},
+            new SelectableMenuEntry(){Name="Heat Map",    Value=typeof(VMHeatMap),      Context=typeof(VMHeatMap) },
             new SelectableMenuEntry(){Name="Options",     Value=typeof(VMOptions),      Context=new VMOptions()},
         };
         Selectable[] _SelectableViewModels;
