@@ -15,6 +15,8 @@ namespace StockAnalysis
     public partial class App : Application, INotifyPropertyChanged
     {
         public static App app => App.Current as App;
+
+        public static new App Current => Application.Current as App;
         public App()
         {
             ToSQLite.InitializeDatabase();
