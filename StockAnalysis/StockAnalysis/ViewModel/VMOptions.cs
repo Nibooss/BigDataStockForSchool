@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace StockAnalysis.ViewModel
 {
@@ -24,6 +25,9 @@ namespace StockAnalysis.ViewModel
                 RaisePropertyChanged();
             }
         }
+
+        public ICommand IncrementBusy => CommandHelper.Create(App.IncrementBusy);
+        public ICommand DecrementBusy => CommandHelper.Create(App.DecrementBusy);
 
         /// <summary>
         /// EventHandler for INotifyPropertyChanged interface

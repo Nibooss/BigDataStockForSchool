@@ -65,6 +65,8 @@ namespace StockAnalysis.Model
                 return null;
             }
 
+            App.IncrementBusy();
+
             StockDownloaderProgress.Start(Slices.Length);
             StockDecoderProgress.Start(Slices.Length);
             StockSaverProgress.Start(Slices.Length);
@@ -132,6 +134,8 @@ namespace StockAnalysis.Model
             StockDecoderProgress.Done();
             StockSaverProgress.Done();
             AllProgress.Done();
+
+            App.DecrementBusy();
 
             return retValue;
         }

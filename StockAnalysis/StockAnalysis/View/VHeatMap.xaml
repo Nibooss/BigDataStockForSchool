@@ -9,119 +9,119 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800" x:Name="root">
 
-        <Grid>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="Spaceholder" MinHeight="40">
+                <RowDefinition.Height>
+                    <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+/}">
+                        <Binding ElementName="root" Path="ActualHeight"/>
+                        <Binding Source="{local:btfx Double=15.0}"/>
+                    </MultiBinding>
+                </RowDefinition.Height>
+            </RowDefinition>
+            <RowDefinition MinHeight="40" Height="auto">
+                <RowDefinition.MaxHeight>
+                    <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+/}">
+                        <Binding ElementName="root" Path="ActualHeight"/>
+                        <Binding Source="{local:btfx Double=2.0}"/>
+                    </MultiBinding>
+                </RowDefinition.MaxHeight>
+            </RowDefinition>
+            <RowDefinition Height="{Binding ElementName=Spaceholder, Path=Height}"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="{Binding ElementName=Spaceholder, Path=Height}"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition MinWidth="220" Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition x:Name="Spaceholder" MinHeight="40">
-                    <RowDefinition.Height>
-                        <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+/}">
-                            <Binding ElementName="root" Path="ActualHeight"/>
-                            <Binding Source="{local:btfx Double=15.0}"/>
-                        </MultiBinding>
-                    </RowDefinition.Height>
-                </RowDefinition>
-                <RowDefinition MinHeight="40" Height="auto">
-                    <RowDefinition.MaxHeight>
-                        <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+/}">
-                            <Binding ElementName="root" Path="ActualHeight"/>
-                            <Binding Source="{local:btfx Double=2.0}"/>
-                        </MultiBinding>
-                    </RowDefinition.MaxHeight>
-                </RowDefinition>
-                <RowDefinition Height="{Binding ElementName=Spaceholder, Path=Height}"/>
                 <RowDefinition Height="auto"/>
-                <RowDefinition Height="{Binding ElementName=Spaceholder, Path=Height}"/>
-                <RowDefinition Height="auto"/>
-                <RowDefinition Height="auto"/>
+                <RowDefinition Height="1*"/>
             </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Select Symbol:"/>
+            <ListView Grid.Row="1" ItemsSource="{Binding Symbols}" SelectedItem="{Binding Symbol}" Style="{StaticResource ResourceKey=st_ListView_Primary}">
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="{x:Type viewModel:VMSymbol}">
+                        <TextBlock Text="{Binding Name}"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
 
-            <Grid Grid.Row="1">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition MinWidth="220" Width="1*"/>
-                    <ColumnDefinition Width="1*"/>
-                    <ColumnDefinition Width="1*"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="1*"/>
-                </Grid.RowDefinitions>
-                <TextBlock Grid.Row="0" Text="Select Symbol:"/>
-                <ListView Grid.Row="1" ItemsSource="{Binding Symbols}" SelectedItem="{Binding Symbol}" Style="{StaticResource ResourceKey=st_ListView_Primary}">
-                    <ListView.ItemTemplate>
-                        <DataTemplate DataType="{x:Type viewModel:VMSymbol}">
-                            <TextBlock Text="{Binding Name}"/>
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="Params"/>
+            <StackPanel Grid.Row="1" Grid.Column="1"/>
 
-                <TextBlock Grid.Row="0" Grid.Column="1" Text="Params"/>
-                <StackPanel Grid.Row="1" Grid.Column="1"/>
+            <Button Grid.Row="1" Grid.Column="2" Command="{Binding UpdateHeatMap}">
+                <Button.Effect>
+                    <DropShadowEffect x:Name="TheEffect" ShadowDepth="0" BlurRadius="25.0" Color="#bada55"/>
+                </Button.Effect>
+                <Button.Content>
+                    <TextBlock Text="update"/>
+                </Button.Content>
+            </Button>
+        </Grid>
 
-                <Button Grid.Row="1" Grid.Column="2" Command="{Binding UpdateHeatMap}">
-                    <Button.Effect>
-                        <DropShadowEffect x:Name="TheEffect" ShadowDepth="0" BlurRadius="25.0" Color="#bada55"/>
-                    </Button.Effect>
-                    <Button.Content>
-                        <TextBlock Text="update"/>
-                    </Button.Content>
-                </Button>
-            </Grid>
-
-            <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Disabled">
-                <Grid>
-                    <Grid.Width>
-                        <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+*}">
-                            <Binding ElementName="root" Path="ActualWidth"/>
-                            <Binding Source="{local:btfx Double=10.0}"/>
-                        </MultiBinding>
-                    </Grid.Width>
-                    <Grid.Background>
-                        <LinearGradientBrush>
-                            <GradientStop Offset="0.0" Color="#33bada55"/>
-                            <GradientStop Offset="1.0" Color="#33ba55da"/>
-                        </LinearGradientBrush>
-                    </Grid.Background>
-                    <Grid.Effect>
-                        <DropShadowEffect Color="#33ba55da" ShadowDepth="0" BlurRadius="25"/>
-                    </Grid.Effect>
-                    <Grid.Resources>
-                        <Style TargetType="{x:Type ItemsControl}">
-                            <Setter Property="ItemsPanel">
-                                <Setter.Value>
-                                    <ItemsPanelTemplate>
-                                        <StackPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </Setter.Value>
-                            </Setter>
-                            <Setter Property="ItemTemplate">
-                                <Setter.Value>
-                                    <DataTemplate DataType="{x:Type viewModel:DummyHeatMapPixel}">
-                                        <StackPanel>
-                                            <StackPanel.Width>
-                                                <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+/}">
-                                                    <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualWidth"/>
-                                                    <Binding Path="Departments" Converter="{local:Int2Double}"/>
-                                                </MultiBinding>
-                                            </StackPanel.Width>
-                                            <Button Height="24" Command="{Binding ElementName=root, Path=DataContext.SelectData}" CommandParameter="{Binding Data}">
-                                                <Button.ToolTip>
-                                                    <Binding Path="Data.Count" Converter="{local:Int2Double}"/>
-                                                </Button.ToolTip>
-                                                <Button.Background>
-                                                    <SolidColorBrush Color="{Binding NextAvailable, Converter={local:Double2Color ColorToMultiply=#bada55}}"/>
-                                                </Button.Background>
-                                            </Button>
-                                            <ItemsControl ItemsSource="{Binding Areas}"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </Grid.Resources>
-                    <ItemsControl x:Name="HeatMapShower" ItemsSource="{Binding HeatMap.Areas}">
+        <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Disabled">
+            <Grid>
+                <Grid.Width>
+                    <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+*}">
+                        <Binding ElementName="root" Path="ActualWidth"/>
+                        <Binding Source="{local:btfx Double=10.0}"/>
+                    </MultiBinding>
+                </Grid.Width>
+                <Grid.Background>
+                    <LinearGradientBrush>
+                        <GradientStop Offset="0.0" Color="#33bada55"/>
+                        <GradientStop Offset="1.0" Color="#33ba55da"/>
+                    </LinearGradientBrush>
+                </Grid.Background>
+                <Grid.Effect>
+                    <DropShadowEffect Color="#33ba55da" ShadowDepth="0" BlurRadius="25"/>
+                </Grid.Effect>
+                <Grid.Resources>
+                    <Style TargetType="{x:Type ItemsControl}">
+                        <Setter Property="ItemsPanel">
+                            <Setter.Value>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Setter Property="ItemTemplate">
+                            <Setter.Value>
+                                <DataTemplate DataType="{x:Type viewModel:DummyHeatMapPixel}">
+                                    <StackPanel>
+                                        <StackPanel.Width>
+                                            <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+/}">
+                                                <Binding RelativeSource="{RelativeSource Mode=FindAncestor, AncestorType={x:Type ItemsControl}}" Path="ActualWidth"/>
+                                                <Binding Path="Departments" Converter="{local:Int2Double}"/>
+                                            </MultiBinding>
+                                        </StackPanel.Width>
+                                        <Button Height="24" Command="{Binding ElementName=root, Path=DataContext.SelectData}" CommandParameter="{Binding Data}">
+                                            <Button.ToolTip>
+                                                <Binding Path="Data.Count" Converter="{local:Int2Double}"/>
+                                            </Button.ToolTip>
+                                            <Button.Background>
+                                                <SolidColorBrush Color="{Binding NextAvailable, Converter={local:Double2Color ColorToMultiply=#bada55}}"/>
+                                            </Button.Background>
+                                        </Button>
+                                        <ItemsControl ItemsSource="{Binding Areas}"/>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </Grid.Resources>
+                <ItemsControl x:Name="HeatMapShower" ItemsSource="{Binding HeatMap.Areas}">
                    
-                    </ItemsControl>
-                </Grid>
-            </ScrollViewer>
+                </ItemsControl>
+            </Grid>
+        </ScrollViewer>
 
         <Grid Grid.Row="5" Margin="5,14,5,5">
             <Grid.ColumnDefinitions>
@@ -139,48 +139,48 @@
             <TextBlock Grid.Column="4" Text="Close"/>
             <TextBlock Grid.Column="5" Text="Volume"/>
         </Grid>
+        
         <ItemsControl Grid.Row="6" ItemsSource="{Binding SelectedData}" VirtualizingStackPanel.IsVirtualizing="True" MaxHeight="2500" >
-                <ItemsControl.Template>
-                    <ControlTemplate TargetType="{x:Type ItemsControl}">
-                        <ScrollViewer CanContentScroll="True">
-                            <ItemsPresenter/>
-                        </ScrollViewer>
-                    </ControlTemplate>
-                </ItemsControl.Template>
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate DataType="{x:Type model:StockMoment}">
-                        <Border BorderThickness="1" Height="50">
-                            <Border.BorderBrush>
-                                <RadialGradientBrush GradientOrigin="0,1" RadiusX="2.0" RadiusY="1.0">
-                                    <GradientStop Offset="0.0" Color="#fff"/>
-                                    <GradientStop Offset="1.0" Color="#000"/>
-                                </RadialGradientBrush>
-                            </Border.BorderBrush>
-                            <Grid Margin="5,14,5,5">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="1*"/>
-                                    <ColumnDefinition Width="1*"/>
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0" Text="{Binding Time}"/>
-                                <TextBlock Grid.Column="1" Text="{Binding Open}"/>
-                                <TextBlock Grid.Column="2" Text="{Binding High}"/>
-                                <TextBlock Grid.Column="3" Text="{Binding Low}"/>
-                                <TextBlock Grid.Column="4" Text="{Binding Close}"/>
-                                <TextBlock Grid.Column="5" Text="{Binding Volume}"/>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </Grid>
-    
+            <ItemsControl.Template>
+                <ControlTemplate TargetType="{x:Type ItemsControl}">
+                    <ScrollViewer CanContentScroll="True">
+                        <ItemsPresenter/>
+                    </ScrollViewer>
+                </ControlTemplate>
+            </ItemsControl.Template>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type model:StockMoment}">
+                    <Border BorderThickness="1" Height="50">
+                        <Border.BorderBrush>
+                            <RadialGradientBrush GradientOrigin="0,1" RadiusX="2.0" RadiusY="1.0">
+                                <GradientStop Offset="0.0" Color="#fff"/>
+                                <GradientStop Offset="1.0" Color="#000"/>
+                            </RadialGradientBrush>
+                        </Border.BorderBrush>
+                        <Grid Margin="5,14,5,5">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Time}"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Open}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding High}"/>
+                            <TextBlock Grid.Column="3" Text="{Binding Low}"/>
+                            <TextBlock Grid.Column="4" Text="{Binding Close}"/>
+                            <TextBlock Grid.Column="5" Text="{Binding Volume}"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
 </UserControl>

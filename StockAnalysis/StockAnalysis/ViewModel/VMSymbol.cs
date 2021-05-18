@@ -1,6 +1,7 @@
 ﻿using StockAnalysis.Model;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 namespace StockAnalysis.ViewModel
 {
@@ -12,6 +13,15 @@ namespace StockAnalysis.ViewModel
         public VMSymbol()
         {
 
+        }
+
+        /// <summary>
+        ///  Constructor with name params
+        /// </summary>
+        /// <param name="mSymbol"></param>
+        public VMSymbol(string symbolName)
+        {
+            Name = symbolName;
         }
 
         /// <summary>
@@ -104,12 +114,11 @@ namespace StockAnalysis.ViewModel
         }
         private bool isDownloaded;
 
-        public async void StartDownload()
+        public async Task StartDownload()
         {
             RaisePropertyChanged(nameof(DownloadProgress));
             var data = await downloader.DownloadTwoYears(Name);
             Data = data.ToArray();
-            
         }
 
         /// <summary>

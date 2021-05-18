@@ -4,9 +4,68 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:StockAnalysis.View"
-             mc:Ignorable="d" 
+             xmlns:viewModel="clr-namespace:StockAnalysis.ViewModel"
+             mc:Ignorable="d" x:Name="root"
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-            
+        <Grid.RowDefinitions>
+            <RowDefinition x:Name="Spaceholder" MinHeight="40">
+                <RowDefinition.Height>
+                    <MultiBinding Converter="{local:MultiConverterMathSimple Calculation=+/}">
+                        <Binding ElementName="root" Path="ActualHeight"/>
+                        <Binding Source="{local:btfx Double=15.0}"/>
+                    </MultiBinding>
+                </RowDefinition.Height>
+            </RowDefinition>
+            <RowDefinition MinHeight="40" Height="auto"/>
+            <RowDefinition Height="{Binding ElementName=Spaceholder, Path=Height}"/>
+            <RowDefinition MinHeight="40" Height="auto"/>
+        </Grid.RowDefinitions>
+
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="1*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="Symbol to Download:"/>
+            <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SymbolName, UpdateSourceTrigger=PropertyChanged}" MaxLines="1" MaxLength="25"/>
+
+            <Button Grid.Column="3" Grid.Row="0" Grid.RowSpan="2" Command="{Binding StartDownload}">
+                <TextBlock>
+                    <Run Text="Start downloading:"/>
+                    <LineBreak/>
+                    <Run Text="{Binding SymbolName}"/>
+                </TextBlock>
+            </Button>
+        </Grid>
+
+        <ItemsControl Grid.Row="5" ItemsSource="{Binding WaitingSymbols}" VirtualizingStackPanel.IsVirtualizing="True" MaxHeight="2500" >
+            <ItemsControl.Template>
+                <ControlTemplate TargetType="{x:Type ItemsControl}">
+                    <ScrollViewer CanContentScroll="True">
+                        <ItemsPresenter/>
+                    </ScrollViewer>
+                </ControlTemplate>
+            </ItemsControl.Template>
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel IsVirtualizing="True" VirtualizationMode="Recycling"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type viewModel:VMSymbol}">
+                    <local:VSymbol/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
     </Grid>
 </UserControl>

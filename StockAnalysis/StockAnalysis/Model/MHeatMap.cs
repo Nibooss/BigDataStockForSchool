@@ -70,10 +70,18 @@ namespace StockAnalysis.Model
                 {
                     Task.Run(() =>
                     {
+                        App.IncrementBusy();
                         HeatMapPixel<T>[] temp = CalculateAreas();
+                        if(temp == null)
+                        {
+                            App.DecrementBusy();
+                            return;
+                        }
                         App.Current.Dispatcher.Invoke(() =>
                         {
-                            Areas = temp;
+                            _Areas = temp; 
+                            RaisePropertyChanged();
+                            App.DecrementBusy();
                         }, System.Windows.Threading.DispatcherPriority.Background);
                     });
                 }

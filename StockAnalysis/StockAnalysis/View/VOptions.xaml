@@ -11,12 +11,18 @@
             <ColumnDefinition Width="auto"/>
             <ColumnDefinition Width="20"/>
             <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
             <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="API Key:"/>
-        <TextBox   Grid.Row="0" Grid.Column="2" Text="{Binding APIKey}"/>
+        <TextBlock Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="1" Text="API Key:"/>
+        <TextBox   Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Text="{Binding APIKey}"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="1" Text="Busy Helper"/>
+        <Button Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="1" Content="Increment Busy" Command="{Binding IncrementBusy}"/>
+        <Button Grid.Row="1" Grid.Column="3" Grid.ColumnSpan="1" Content="Decrement Busy" Command="{Binding DecrementBusy}"/>
     </Grid>
 </UserControl>

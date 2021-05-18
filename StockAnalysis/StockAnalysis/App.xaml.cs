@@ -15,14 +15,28 @@ namespace StockAnalysis
     /// </summary>
     public partial class App : Application, INotifyPropertyChanged
     {
+        /// <summary>
+        /// Just shortening a name. Xaml cant work with the new Current property :(
+        /// </summary>
         public static App app = Application.Current as App;
-        public static new App Current => Application.Current as App;
+
+        /// <summary>
+        /// Just casts the Application current Application to this class.
+        /// </summary>
+        public static new App Current => (App)Application.Current;
+
+        /// <summary>
+        /// Constructor
+        /// 
+        /// * Opens MainWindow
+        /// * Initializes database
+        /// </summary>
         public App()
         {
             this.Resources = new GeneralResources();
 
             ToSQLite.InitializeDatabase();
-            //InitializeComponent(); // Stupid WPF bug. Not calling this function makes the xaml file pointles :/
+
             Current.MainWindow = new VMainWindow();
             Current.MainWindow.DataContext = new MainWindowContext();
             Current.MainWindow.Show();
@@ -43,20 +57,81 @@ namespace StockAnalysis
             return TaskScheduler.FromCurrentSynchronizationContext();
         }
 
-        public int IsBusy
+        /// <summary>
+        /// Provides an indicator for the app. True if it is busy right now.
+        /// Dont set it directly. Use the functions to interact with this. I tried to make the functions threadsave. But I cant promis they are. 
+        /// <see cref="IncrementBusy"/>
+        /// <see cref="DecrementBusy"/>
+        /// </summary>
+        public bool IsBusy
         {
             get
             {
-                return isBusy;
+                return _IsBusy;
             }
             set
             {
-                isBusy = value;
+                _IsBusy = value;
                 RaisePropertyChanged();
             }
         }
+
+        /// <summary>
+        /// Holds an indicator for the app. True if it is busy right now.
+        /// Dont set it directly. Use the functions to interact with this. I tried to make the functions threadsave. But I cant promis they are. 
+        /// <see cref="IncrementBusy"/>
+        /// <see cref="DecrementBusy"/>
+        /// </summary>
+        private bool _IsBusy;
+
+        /// <summary>
+        /// Holds an internal counter.
+        /// </summary>
         private int isBusy;
-        public static string APIKEY { get; set; } = "WEWF8LKFM1UXNU6X";
+
+        /// <summary>
+        /// Provides a (hopefully) threadsafe way to interact with the Busy indicator.
+        /// Call this function if you start a (long running) Task.
+        /// </summary>
+        public static void IncrementBusy()
+        {
+            var result = Interlocked.Increment(ref App.Current.isBusy);
+            if (true == App.Current._IsBusy)
+            {
+                return;
+            }
+            if(result == 0)
+            {
+                return;
+            }
+            App.Current.Dispatcher.BeginInvoke(() =>
+            {
+                App.Current.IsBusy = true;
+            }, DispatcherPriority.Send);
+        }
+
+        /// <summary>
+        /// Provides a (hopefully) threadsafe way to interact with the Busy indicator.
+        /// Call this function if a (long running) Task ends.
+        /// </summary>
+        public static void DecrementBusy()
+        {
+            var result = Interlocked.Decrement(ref App.Current.isBusy);
+            if (false == App.Current._IsBusy)
+            {
+                return;
+            }
+            if(result != 0)
+            {
+                return;
+            }
+            App.Current.Dispatcher.BeginInvoke(() =>
+            {
+                App.Current.IsBusy = false;
+            }, DispatcherPriority.ApplicationIdle);
+        }
+
+        public static string APIKEY { get; set; } = string.Empty; // "WEWF8LKFM1UXNU6X"; Yes this is my key. I should not have put it here. But I did...
 
 
         /// <summary>
