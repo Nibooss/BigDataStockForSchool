@@ -22,7 +22,5 @@ namespace StockAnalysis.View
         // Using a DependencyProperty as the backing store for DoubleTag_A.  This enables animation, styling, binding, etc...
         public static readonly DependencyProperty DoubleTag_AProperty =
             DependencyProperty.RegisterAttached("DoubleTag_A", typeof(double), typeof(MoreTags), new PropertyMetadata(0.0));
-
-
     }
 }

@@ -6,16 +6,63 @@ using System.Threading.Tasks;
 
 namespace StockAnalysis.Model
 {
-
+    
     public class HeatMapPixel<T> : INotifyPropertyChanged
     {
+        public HeatMapPixel()
+        {
+        }
+
+        public HeatMapPixel(Func<T, double> dimension, ObservableCollection<T> data, int departments, double lowerBoundry, double upperBoundry, int debth, int maxDebth, int inheritDataLength = -1)
+        {
+            Dimension = dimension;
+            Data = data;
+            Departments = departments;
+            LowerBoundry = lowerBoundry;
+            UpperBoundry = upperBoundry;
+            Debth = debth;
+            MaxDebth = maxDebth;
+
+            InitialDataLenght = inheritDataLength;
+        }
+
+        public double Threshold { get; set; }
+
+        public double NextAvailable { get; set; }
+
+        public int InitialDataLenght 
+        {
+            get
+            {
+                return _InitialDataLenght;
+            }
+            set
+            {
+                _InitialDataLenght = value;
+            }
+        }
+        public int _InitialDataLenght;
+
         public int ChildrenCount { get; set; }
 
         public Func<T, double> Dimension { get; set; }
 
-        public Collection<T> Data { get; set; }
+        public ObservableCollection<T> Data 
+        {
+            get
+            {
+                return _Data;
+            }
+            set
+            {
+                _Data = value;
+                RaisePropertyChanged();
+                RaisePropertyChanged(InitialDataLenght);
+            }
+        }
+        public ObservableCollection<T> _Data;
 
-        private HeatMapPixel<T>[] Areas
+        public HeatMapPixel<T>[] Areas
         {
             get
             {
@@ -23,12 +70,12 @@ namespace StockAnalysis.Model
                 {
                     Task.Run(() =>
                     {
-                        return CalculateAreas();
-                    }).ContinueWith(t =>
-                    {
-                        _Areas = t.Result;
-                        RaisePropertyChanged();
-                    }, App.DispatcherScheduler);
+                        HeatMapPixel<T>[] temp = CalculateAreas();
+                        App.Current.Dispatcher.Invoke(() =>
+                        {
+                            Areas = temp;
+                        }, System.Windows.Threading.DispatcherPriority.Background);
+                    });
                 }
                 return _Areas;
             }
@@ -47,11 +94,15 @@ namespace StockAnalysis.Model
         public double UpperBoundry { get; set; } = double.NegativeInfinity;
 
         public int Debth { get; set; }
-        public int MaxDebth { get; set; } = 25;
+        public int MaxDebth { get; set; }
 
         private HeatMapPixel<T>[] CalculateAreas()
         {
             if (MaxDebth < Debth)
+            {
+                return null;
+            }
+            if(NextAvailable <= Threshold)
             {
                 return null;
             }
@@ -67,36 +118,47 @@ namespace StockAnalysis.Model
             double MinValue = double.PositiveInfinity;
             var retMe = new HeatMapPixel<T>[Departments];
 
-            // Both min and max have to be set
-            if (LowerBoundry == double.PositiveInfinity || UpperBoundry == double.NegativeInfinity)
+            // Determine Min and max in current department
+            foreach (T Point in Data)
             {
-                foreach (T Point in Data)
+                var tempValue = Dimension.Invoke(Point);
+                if (tempValue > MaxValue)
                 {
-                    var tempValue = Dimension.Invoke(Point);
-                    if (tempValue > MaxValue)
-                    {
-                        MaxValue = tempValue;
-                    }
-                    if (tempValue < MinValue)
-                    {
-                        MinValue = tempValue;
-                    }
+                    MaxValue = tempValue;
+                }
+                if (tempValue < MinValue)
+                {
+                    MinValue = tempValue;
                 }
             }
 
+            if(LowerBoundry == double.PositiveInfinity)
+            {
+                LowerBoundry = MinValue;
+            }
+            if(UpperBoundry == double.NegativeInfinity)
+            {
+                UpperBoundry = MaxValue;
+            }
+
+            double SizeOfDepartment = UpperBoundry - LowerBoundry;
             // Distance between Points
-            double Distance = (MaxValue + MinValue) / Departments;
+            double SizeOfSubDeparment = SizeOfDepartment / Departments;
 
             // Initialize retMe
             for (int i = 0; i < Departments; i++)
             {
-                retMe[i] = new HeatMapPixel<T>()
-                {
-                    LowerBoundry = LowerBoundry + i * Distance,
-                    UpperBoundry = LowerBoundry + (i + 1) * Distance,
-                    Debth = Debth + 1,
-                    MaxDebth = MaxDebth,
-                };
+                retMe[i] = new HeatMapPixel<T>(
+                    dimension: Dimension,
+                    data: new ObservableCollection<T>(),
+                    departments: Departments,
+                    lowerBoundry: LowerBoundry + i * SizeOfSubDeparment,
+                    upperBoundry: LowerBoundry + (i + 1) * SizeOfSubDeparment,
+                    debth: Debth + 1,
+                    maxDebth: MaxDebth,
+                    inheritDataLength: InitialDataLenght
+                    );
+                retMe[i].Threshold = Threshold;
             }
 
             // Distribute points into right collection
@@ -106,13 +168,26 @@ namespace StockAnalysis.Model
                 var tempValue = Dimension.Invoke(Point);
 
                 // Subtract minimum
-                tempValue -= MinValue;
+                tempValue -= LowerBoundry;
 
                 // Devide by distance to get index
-                tempValue /= Distance;
+                tempValue /= SizeOfSubDeparment;
+
+                // Hack: Is this correct?
+                // Clamp
+                if(tempValue >= retMe.Length)
+                {
+                    tempValue -= 1;
+                }
 
                 // Add to right Collection
                 retMe[(int)tempValue].Data.Add(Point);
+            }
+
+            // Tell them if they sould start calulate more
+            for (int i = 0; i < Departments; i++)
+            {
+                retMe[i].NextAvailable = ((double)retMe[i].Data.Count / (double)Data.Count);
             }
 
             return retMe;

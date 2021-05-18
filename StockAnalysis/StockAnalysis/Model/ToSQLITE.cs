@@ -222,20 +222,35 @@ namespace StockAnalysis.Model
                 CloseDatabase();
             });
         }
+
+        public static StockMoment[] ReadFromDB(MSymbol symbol) => ReadFromDB(symbol.Name);
         public static StockMoment[] ReadFromDB(string symbol)
         {
             // Meta Command
-            var MetaCommand = new SqliteCommand($"SELECT * from MetaTable WHERE Symbol LIKE '{symbol}'", OpenDatabase);
+            var MetaCommand = new SqliteCommand($"SELECT * FROM 'MetaTable' WHERE Symbol LIKE '{symbol}'", OpenDatabase);
             var MetaQuery = MetaCommand.ExecuteReader();
-            int NumOfData = MetaQuery.GetInt32(1);
+            var x = MetaQuery.Read();
+            int NumOfData = MetaQuery.GetInt32(2);
 
             var Buffer = new StockMoment[NumOfData];
 
             SqliteCommand selectCommand = new SqliteCommand($"SELECT * from {symbol}", OpenDatabase);
             SqliteDataReader selectQuery = selectCommand.ExecuteReader();
 
-            for(int i = 0; i < NumOfData; i++)
+            BeginTransaction.ExecuteNonQuery();
+
+            int i = 0;
+            while(true)
             {
+                if(i >= NumOfData)
+                {
+                    break;
+                }
+                if (false == selectQuery.Read())
+                {
+                    break;
+                }
+
                 var sm = new StockMoment();
                 sm.Time = DateTime.ParseExact(selectQuery.GetString(0), DT_FORMAT, null);
                 sm.Open = (double)selectQuery.GetValue(1);
@@ -245,7 +260,10 @@ namespace StockAnalysis.Model
                 sm.Volume = (double)selectQuery.GetValue(5);
 
                 Buffer[i] = sm;
+                i++;
             }
+            EndTransaction.ExecuteNonQuery();
+
             return Buffer;
             CloseDatabase();
         }

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Globalization;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Markup;
+using System.Windows.Media;
 
 namespace StockAnalysis.View
 {
@@ -32,6 +34,13 @@ namespace StockAnalysis.View
 
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
+            // Precondition Checks
+            if(Calculation == null)
+            {
+                return 0.0;
+            }
+            
+
             var result = Offset;
             var i = 0;
             while(true)
@@ -43,6 +52,10 @@ namespace StockAnalysis.View
                 if(i >= Calculation.Length)
                 {
                     break;
+                }
+                if(values[i].GetType() != typeof(double))
+                {
+                    return result;
                 }
                 switch (Calculation[i])
                 {
@@ -80,10 +93,22 @@ namespace StockAnalysis.View
                     case 'n':
                         result = result < 0 ? 0 : result;
                         break;
+                    case 'g':
+                        return new GridLength(result, GridUnitType.Pixel);
+                    case 'G':
+                        return new GridLength(result, GridUnitType.Star);
                 }
                 i++;
             }
-            return result;
+            switch(targetType.Name)
+            {
+                case nameof(GridLength):
+                    return new GridLength(result, GridUnitType.Pixel);
+                case nameof(Color):
+                    return Color.FromRgb((byte)result, (byte)result, (byte)result);
+                default:
+                    return result;
+            }
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
