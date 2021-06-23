@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
@@ -32,7 +34,6 @@ namespace StockAnalysis.ViewModel
 
     public class VMHeatMap : INotifyPropertyChanged
     {
-
         /// <summary>
         /// Provides the threshold
         /// Set calls INotifyPropertyChanded helper function.
@@ -54,7 +55,6 @@ namespace StockAnalysis.ViewModel
         /// Holds the threshold
         /// </summary>
         public double _Threshold = 0.05;
-
 
         /// <summary>
         /// Provides the number of devisions per level
@@ -78,7 +78,6 @@ namespace StockAnalysis.ViewModel
         /// </summary>
         public int _Divisions = 2;
 
-
         /// <summary>
         /// Provides max Debth
         /// Set calls INotifyPropertyChanded helper function.
@@ -100,7 +99,6 @@ namespace StockAnalysis.ViewModel
         /// Holds max Debth
         /// </summary>
         public int _MaxDebth = 13;
-
 
         /// <summary>
         /// Provides an indicator indicating changed data
@@ -211,6 +209,43 @@ namespace StockAnalysis.ViewModel
             }
         });
 
+
+        public PropertyInfo SelectedDimension
+        {
+            get => _SelectedDimension ??= AvailableDimensions.Last();
+            set
+            {
+                if (false == value.PropertyType.IsAssignableFrom(typeof(double)))
+                {
+                    return;
+                }
+                _SelectedDimension = value;
+            }
+        }
+        private PropertyInfo _SelectedDimension;
+
+        public PropertyInfo[] AvailableDimensions => typeof(StockMoment).GetProperties();
+
+        private double DimensionFunc(StockMoment item)
+        {
+            if(SelectedDimension.PropertyType != typeof(double))
+            {
+                return 0.0;
+            }
+            if(false == SelectedDimension.DeclaringType.IsAssignableFrom(item.GetType()))
+            {
+                return 0.0;
+            }
+            return (double)SelectedDimension.GetValue(item);
+        }
+
+        private CancellationTokenSource CTS
+        {
+            get => _CTS ??= new CancellationTokenSource();
+            set => _CTS = value;
+        }
+        private CancellationTokenSource _CTS;
+
         /// <summary>
         /// Provides the heatMap
         /// </summary>
@@ -236,18 +271,26 @@ namespace StockAnalysis.ViewModel
             }
 
             var returnvalue = new HeatMapPixel<StockMoment>();
-            returnvalue.Dimension = sm => sm.Volume;
+            returnvalue.Dimension = DimensionFunc;
             returnvalue.Departments = Divisions;
             returnvalue.Data = new ObservableCollection<StockMoment>(Data);
             returnvalue.InitialDataLenght = returnvalue.Data.Count;
             returnvalue.Threshold = Threshold;
             returnvalue.NextAvailable = 1.0;
             returnvalue.MaxDebth = MaxDebth;
+            returnvalue.CTS = CTS;
             return returnvalue;
         }
 
+        public ICommand Cancel => CommandHelper.Create(() =>
+        {
+            HeatMap = initHeatMap();
+            CTS.Cancel();
+        });
+
         public ICommand UpdateHeatMap => CommandHelper.Create(() =>
         {
+            CTS = null;
             HeatMap = initHeatMap();
         });
 

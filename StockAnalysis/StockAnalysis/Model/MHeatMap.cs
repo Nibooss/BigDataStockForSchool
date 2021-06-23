@@ -2,11 +2,12 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace StockAnalysis.Model
 {
-    
+
     public class HeatMapPixel<T> : INotifyPropertyChanged
     {
         public HeatMapPixel()
@@ -27,7 +28,7 @@ namespace StockAnalysis.Model
         }
 
         public double Threshold { get; set; }
-
+        public CancellationTokenSource CTS {get;set;}
         public double NextAvailable { get; set; }
 
         public int InitialDataLenght 
@@ -70,9 +71,19 @@ namespace StockAnalysis.Model
                 {
                     Task.Run(() =>
                     {
+                        if (CTS.Token.IsCancellationRequested)
+                        {
+                            return;
+                        }
+
                         App.IncrementBusy();
                         HeatMapPixel<T>[] temp = CalculateAreas();
                         if(temp == null)
+                        {
+                            App.DecrementBusy();
+                            return;
+                        }
+                        if (CTS.Token.IsCancellationRequested)
                         {
                             App.DecrementBusy();
                             return;
@@ -167,6 +178,7 @@ namespace StockAnalysis.Model
                     inheritDataLength: InitialDataLenght
                     );
                 retMe[i].Threshold = Threshold;
+                retMe[i].CTS = CTS;
             }
 
             // Distribute points into right collection

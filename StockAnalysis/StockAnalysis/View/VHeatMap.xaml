@@ -6,8 +6,10 @@
              xmlns:local="clr-namespace:StockAnalysis.View"
              xmlns:viewModel="clr-namespace:StockAnalysis.ViewModel"
              xmlns:model="clr-namespace:StockAnalysis.Model"
+             xmlns:r="clr-namespace:System.Reflection;assembly=System.Reflection"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800" x:Name="root">
+             d:DesignHeight="450" d:DesignWidth="800" x:Name="root"
+             d:DataContext="{d:DesignInstance {x:Type viewModel:VMHeatMap}}">
 
     <Grid>
         <Grid.RowDefinitions>
@@ -53,17 +55,39 @@
                 </ListView.ItemTemplate>
             </ListView>
 
-            <TextBlock Grid.Row="0" Grid.Column="1" Text="Params"/>
-            <StackPanel Grid.Row="1" Grid.Column="1"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="Params:"/>
 
-            <Button Grid.Row="1" Grid.Column="2" Command="{Binding UpdateHeatMap}">
-                <Button.Effect>
-                    <DropShadowEffect x:Name="TheEffect" ShadowDepth="0" BlurRadius="25.0" Color="#bada55"/>
-                </Button.Effect>
-                <Button.Content>
-                    <TextBlock Text="update"/>
-                </Button.Content>
-            </Button>
+            <ListView Grid.Row="1" Grid.Column="1" ItemsSource="{Binding AvailableDimensions}" SelectedItem="{Binding SelectedDimension}">
+                <ListView.ItemTemplate>
+                    <DataTemplate DataType="{x:Type r:PropertyInfo}">
+                        <TextBlock Text="{Binding Name}"/>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <StackPanel Grid.Row="1" Grid.Column="2">
+                <TextBlock>
+                    <Run Text="Threshold:"/>
+                    <Run Text="{Binding Threshold}"/>
+                </TextBlock>
+                <Slider Value="{Binding Threshold}" Minimum="0" Maximum="1"/>
+                <TextBlock>
+                    <Run Text="MaxDebth:"/>
+                    <Run Text="{Binding MaxDebth}"/>
+                </TextBlock>
+                <Slider Value="{Binding MaxDebth}" Minimum="1" Maximum="15" TickFrequency="1"/>
+                <TextBlock>
+                    <Run Text="Divisions:"/>
+                    <Run Text="{Binding Divisions}"/>
+                </TextBlock>
+                <Slider Value="{Binding Divisions}" Minimum="2" Maximum="5" TickFrequency="1"/>
+                <Button Command="{Binding Cancel}">
+                    <TextBlock Text="Cancel"/>
+                </Button>
+                <Button Command="{Binding UpdateHeatMap}">
+                    <TextBlock Text="Update"/>
+                </Button>
+            </StackPanel>
         </Grid>
 
         <ScrollViewer Grid.Row="3" HorizontalScrollBarVisibility="Visible" VerticalScrollBarVisibility="Disabled">
